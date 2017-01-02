@@ -57,7 +57,7 @@ def Template(DefaultTemplate):
 All you need to do is define the importable string for that template, and do like this:
 
 ```python
-(synctree.source > synctree.destination) | '__main__.Template'
+(synctree.source > synctree.destination) | Template
 ```
 
-Which basically says "Take the differences between the source and destination, and send the action objects to the importable class object".
+Which basically says "Take the differences between the source and destination, and invoke the commands that are defined in an instance of the class".
