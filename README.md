@@ -39,7 +39,7 @@ This creates a students on the destination branch, one which is entirely identic
 synctree.source > synctree.destination
 ```
 
-The greater than operator tells the framework to exact the differences, and in this case outputs an generator object that creates a series of action objects:
+The greater than operator tells the framework to extract the differences, and in this case outputs an generator object that creates a series of action objects:
 
 ```python
  Action(idnumber='999', message='new_students')
