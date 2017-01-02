@@ -1,0 +1,65 @@
+{
+  "root": {
+    "data": "{\"importer_klass_list\": [[\"__main__.AStudentImp\", null, null], [\"__main__.MStudentImp\", null, null]], \"branches\": [\"autosend\", \"moodle\"], \"template_class\": null, \"subbranches\": [\"students\", \"staff\", \"enrollments\"], \"model_klass_list\": [[\"__main__.AStudent\", null, \"__main__.AEnrollment\"], [\"__main__.MStudent\", null, \"__main__.MEnrollment\"]]}",
+    "children": [
+      {
+        "autosend": {
+          "data": null,
+          "children": [
+            {
+              "enrollments": {
+                "data": null,
+                "children": [
+                  {
+                    "99999": {
+                      "data": "{\"courses\": [\"9A\", \"9B\"]}"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "staff": {
+                "data": null
+              }
+            },
+            {
+              "students": {
+                "data": null
+              }
+            }
+          ]
+        }
+      },
+      {
+        "moodle": {
+          "data": null,
+          "children": [
+            {
+              "enrollments": {
+                "data": null,
+                "children": [
+                  {
+                    "99999": {
+                      "data": "{\"courses\": [\"9A\"]}"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "staff": {
+                "data": null
+              }
+            },
+            {
+              "students": {
+                "data": null
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

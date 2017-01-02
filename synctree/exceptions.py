@@ -1,0 +1,2 @@
+class TemplateDoesNotImplement(Exception):
+	pass
