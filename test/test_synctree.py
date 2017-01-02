@@ -5,7 +5,6 @@ from synctree.importers.default_importer import DefaultImporter
 from synctree.interface import property_interface
 student_properties = 'lastfirst last first'
 import json
-import gns
 
 # Classes we need
 class Student(Base):
@@ -83,7 +82,6 @@ def test_init(inspect=False):
     s.new('moodle', 'enrollments', '99999', courses=['9A'])
     result = list(s.moodle - s.autosend)
     # Add and an update?
-    gns.tutorial("HERE", banner=True)
     assert len(result) == 1
     assert result[0].value == new_enrollment
     s.clear()
@@ -115,9 +113,8 @@ def test_init(inspect=False):
     assert t.autosend.enrollments.get('99999').courses == ['9A', '9B']  # test the list adding feature
     assert t.autosend.enrollments.get('11111').courses == {'10A', '10B'}  # test the set adding feature
 
-    gns.tutorial("Tests passed!", banner=True)
+
 
 if __name__ == "__main__":
 
-    gns.set_debug(True)
     test_init(inspect=True)
