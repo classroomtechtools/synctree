@@ -21,7 +21,7 @@ synctree.source.students       # <Subbranch students of branch source>
 synctree.destination.students  # <Subbranch students of branch destination>
 ```
 
-Notice that the tree is mirrored: Both branches have the same number os subbranches. There are no sub-subbranches, but there are leaves of the subbranch, which will represent particular objects that are to be synced:
+Notice that the tree is mirrored: Both branches have the same number of subbranches. There are no sub-subbranches, but there are leaves of the subbranch, which will represent particular objects that are to be synced:
 
 ```python
 synctree.new('source', 'students', '111')   
