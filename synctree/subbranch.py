@@ -1,4 +1,4 @@
-import gns;from collections import defaultdict
+from collections import defaultdict
 import inspect
 from treelib.tree import DuplicatedNodeIdError as Duplicated
 from synctree.importers.default_importer import DefaultImporter
@@ -42,6 +42,9 @@ class SubBranch:
             return None
 
     def get_objects(self):
+        """
+        Due to length of schedule, (almost 200,000 items) this is waaay faster
+        """
         _nodes = self.branch.tree._nodes
         for node in [_nodes[key] for key in _nodes.keys() if key.startswith(self.parent_keypath + '/')]:
             if node.data is not None:

@@ -106,7 +106,7 @@ class Branch:
         return Wheel(call_generator)
 
     def __repr__(self):
-        return "{0.__class__.__name__}({0.tree}, {0.branchname}, {0.subbranches})".format(self)
+        return f"{self.__class__.__name__}({self.tree}, {self.branchname}, {self.subbranches})"
 
 class MoodleBranch:
     pass

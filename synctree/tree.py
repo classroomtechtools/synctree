@@ -22,9 +22,27 @@ class JsonEncoder(json.JSONEncoder):
             return obj._to_json
         return super().encode(self, obj)
 
+class SyncTreeFactory:
+
+    def __init_(self, branches, subbranches, *args, **kwargs):
+        """ Does validation checks and then returns correct one """
+        pass
+
 class SyncTree(Tree):
+    """ Basic class """
     path_delim = '/'
     rootname = 'root'
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+class SyncTreeByObjects(SyncTree):
+    """ Uses named tuple as part of the model """
+
+    def __init__(self, branches, subbranches: {}):
+        pass
+
+class SyncTreeByClasses(SyncTree):
 
     def __init__(self, 
                  branches, 
@@ -32,7 +50,6 @@ class SyncTree(Tree):
                  model_klass_list: '( (classstr, classstr, ..), (classstr, classstr, ..) )',
                  importer_klass_list: '( (classstr, classstr, ..), (classstr, classstr, ..) )',
                  branch_class=None,
-                 template_class=None,
                  jsonify_root_data=True):
         """
         """

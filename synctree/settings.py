@@ -1,11 +1,4 @@
 """
-Instructions for use:
-> from dss.settings import setup_settings
-> setup_settings(module)
-# Another file
-> import module_settings
-
-(Note: The importable module's name is actually module.__name__ + '_settings')
 """
 
 settings_ini_filename = 'settings.ini'

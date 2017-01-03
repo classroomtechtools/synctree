@@ -33,7 +33,7 @@ class DefaultTemplate:
             elif result.success is None:
                 self.not_implemented(action, result)
             else:
-                raise NotImplemented("")
+                raise NotImplemented()
 
     def success(self, action, result):
         pass        

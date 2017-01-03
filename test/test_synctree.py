@@ -64,6 +64,18 @@ class MEnrollmentImp(DefaultImporter):
     def reader(self):
         yield dict(idnumber='99999', courses=['9A'])
 
+def test_basic():
+    branches = ['csv', 'db']
+    #subbranches = ['students', 'staff', 'enrollments']
+    subbranches = {
+        'students': ['name', 'grade'],
+        'staff': ['name', 'passport_id'],
+        'course': ['name'],
+        'enrollments': ['user_idnumber', 'course']
+    }
+
+    s = SyncTree(branches, subbranches)
+
 def test_init(inspect=False):
 
     branches = ['autosend', 'moodle']
