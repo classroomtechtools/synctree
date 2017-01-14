@@ -7,16 +7,31 @@ class Interface(metaclass=ABCMeta):
     def __init__(self, idnumber, **kwargs):
         too_many = set(kwargs.keys()) - set(self._defaults.keys())
         if too_many != set():
-            raise TypeError('On init, {} passed unexpcted kwarg(s): {}'.format(self.__class__.__name__, ",".join(list(too_many))))
+            raise TypeError(f'On init, {self.__class__.__name__} passed unexpcted kwarg(s): {too_many}')
         self._kwargs = kwargs
         new_kwargs = copy.copy(self._defaults)
         new_kwargs.update(kwargs)
         self.idnumber = idnumber
+
         for key in new_kwargs:
             try:
                 setattr(self, key, new_kwargs[key])
             except AttributeError:
-                raise AttributeError("Cannot set {} attr ".format(key))
+                if key in self._defaults and not key in kwargs:
+                    raise AttributeError(
+                        f"Attr '{key}' in {self.__class__.__name__} has inconsistency in model and importer.\n"
+                        "Model defined a default that is not present in kwargs passed to __init__"
+                    )
+                elif key in kwargs:
+                    raise AttributeError(
+                        f"Attr '{key}' in {self.__class__.__name__} has inconsistency in model and importer.\n" 
+                        "Importer passed keyword on __init__ that has already defined by a property."
+                    )
+                else:
+                    raise AttributeError(
+                        f"Attr '{key}' in {self.__class__.__name__} has inconsistency in model and importer.\n"
+                        "Root cause unknown"
+                    ) 
 
 class property_interface(object):
     """

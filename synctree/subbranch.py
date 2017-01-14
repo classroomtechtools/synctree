@@ -1,4 +1,4 @@
-import gns;from collections import defaultdict
+from collections import defaultdict
 import inspect
 from treelib.tree import DuplicatedNodeIdError as Duplicated
 from synctree.importers.default_importer import DefaultImporter

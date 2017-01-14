@@ -1,3 +1,5 @@
+import pytest
+
 from synctree.tree import SyncTree
 from synctree.base import Base
 from synctree.branch import Branch
@@ -113,8 +115,87 @@ def test_init(inspect=False):
     assert t.autosend.enrollments.get('99999').courses == ['9A', '9B']  # test the list adding feature
     assert t.autosend.enrollments.get('11111').courses == {'10A', '10B'}  # test the set adding feature
 
+def test_templates():
+
+    from synctree.templates import DefaultTemplate
+    from synctree.hijacker import coerce_returns_to_list
+    from synctree.utils import extend_template_exceptions
+    from synctree.actions import define_action
+
+    from synctree.results import \
+        successful_result, \
+        unsuccessful_result, \
+        dropped_action
+
+    import gns
+
+    class ExceptionException(Exception): pass
+    class ExceptionSuccess(Exception): pass
+    class ExceptionFail(Exception): pass
+    class ExceptionNotImplemented(Exception): pass
+
+    class MyReporter:
+
+        def exception(self, action, result):
+            raise ExceptionException("exception_method")
+
+        def success(self, action, result):
+            raise ExceptionSuccess("success_method")
+
+        def fail(self, action, result):
+            raise ExceptionFail("fail_method")
+
+        def not_implemented(self, action, result):
+            """
+            Override if this
+            """
+            raise ExceptionNotImplemented("not_implemented")
+
+    class NewTemplate(DefaultTemplate):
+        _reporter_class = MyReporter
+        _exceptions = extend_template_exceptions('not_this_one result')
+
+        def test_this_one(self):
+            return 1  # not a list
+
+        def not_this_one(self):
+            return 1  # not a list
+
+        def success(self, action):
+            return successful_result(method=action.method, info="called")
+
+        def fail(self, action):
+            return unsuccessful_result(method=action.method, info="called")
+
+        def dropped(self, action):
+            return dropped_action(method=action.method, info='none')
+
+        def raises_exception(self):
+            undeclared_variable # raises runtime error, should be eaten up
+
+    template = NewTemplate()
+
+    # Test that new decorator has been put into place
+    assert template.test_this_one.__name__ == "test_this_one"
+    assert isinstance(template.test_this_one, coerce_returns_to_list)
+    assert template.test_this_one() == [1]
+    assert template.not_this_one() == 1
+
+    # Test we get expected results
+
+    action = define_action(method='success')
+    with pytest.raises(ExceptionSuccess):
+        template(action)
+
+    action = define_action(method='fail')
+    with pytest.raises(ExceptionFail):
+        template(action)
+
+    action = define_action(method='raises_exception')
+    with pytest.raises(ExceptionException): 
+        template(action)
 
 
 if __name__ == "__main__":
 
-    test_init(inspect=True)
+    test_templates()

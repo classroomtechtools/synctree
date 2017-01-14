@@ -1,6 +1,6 @@
 import treelib
 import json
-from synctree.utils import return_action
+from synctree.actions import define_action
 
 class SetEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -60,30 +60,30 @@ class Base:
             try:
                 this_attr = getattr(self, attribute)
             except AttributeError:
-                yield return_action(message="err_no_attr:{}".format(attribute), **common)
+                yield define_action(method="err_no_attr:{}".format(attribute), **common)
                 continue
             try:
                 that_attr = getattr(other, attribute)
             except AttributeError:
-                yield return_action(message="err_no_attr:{}".format(attribute), **common)
+                yield define_action(method="err_no_attr:{}".format(attribute), **common)
                 continue
 
             if type(this_attr) != type(that_attr):
-                yield return_action(message="err_integrity", **common)
+                yield define_action(method="err_integrity", **common)
                 continue
 
             if isinstance(this_attr, list):  # both are lists
                 for to_add in set(this_attr) - set(that_attr):
-                    yield return_action(value=to_add, message="add_{}_{}_to_{}".format(self.__subbranch__, attribute, other.__branch__), **common)
+                    yield define_action(value=to_add, method="add_{}_{}_to_{}".format(self.__subbranch__, attribute, other.__branch__), **common)
                 for to_remove in set(that_attr) - set(this_attr):
-                    yield return_action(value=to_remove, message="remove_{}_{}_from_{}".format(self.__subbranch__, attribute, other.__branch__), **common)
+                    yield define_action(value=to_remove, method="remove_{}_{}_from_{}".format(self.__subbranch__, attribute, other.__branch__), **common)
 
             elif isinstance(this_attr, set):  # both are sets
                 for to_add in this_attr - that_attr:
-                    yield return_action(value=to_add, message="add_{}_{}_to_{}".format(self.__subbranch__, attribute, other.__branch__), **common)
+                    yield define_action(value=to_add, method="add_{}_{}_to_{}".format(self.__subbranch__, attribute, other.__branch__), **common)
                 for to_remove in that_attr - this_attr:
-                    yield return_action(value=to_remove, message="remove_{}_{}_from_{}".format(self.__subbranch__, attribute, other.__branch__), **common)
+                    yield define_action(value=to_remove, method="remove_{}_{}_from_{}".format(self.__subbranch__, attribute, other.__branch__), **common)
 
             elif this_attr != that_attr:
-                yield return_action(message="update_{}_{}".format(other.__subbranch__, attribute), value=this_attr, old_value=that_attr, **common)
+                yield define_action(method="update_{}_{}".format(other.__subbranch__, attribute), value=this_attr, old_value=that_attr, **common)
 

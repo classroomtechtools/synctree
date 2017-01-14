@@ -1,7 +1,7 @@
 from synctree.subbranch import SubBranch, SubBranchOff
-from synctree.utils import return_action
+from synctree.actions import define_action
 
-from synctree.utils import Wheel
+from synctree import Wheel
 from functools import partial
 
 class Branch:
@@ -80,11 +80,11 @@ class Branch:
             for idnumber in leftsubbranch - rightsubbranch:
                 # items only appearing in left
                 l = leftsubbranch.get(idnumber)
-                yield return_action(idnumber=idnumber, value=l, source=l, dest=None, message='new_{}'.format(subbranch))
+                yield define_action(idnumber=idnumber, value=l, source=l, dest=None, method='new_{}'.format(subbranch))
             for idnumber in rightsubbranch - leftsubbranch:
                 # items only appearing in right
                 r = rightsubbranch.get(idnumber)
-                yield return_action(idnumber=idnumber, value=r, source=None, dest=r, message='old_{}'.format(subbranch))
+                yield define_action(idnumber=idnumber, value=r, source=None, dest=r, method='old_{}'.format(subbranch))
             for idnumber in leftsubbranch & rightsubbranch:
                 # common items
                 lobj = leftsubbranch.get(idnumber)

@@ -1,28 +1,4 @@
 import importlib, inspect
-from collections import namedtuple
-
-Action = namedtuple('Action', 'idnumber source dest message attribute value old_value')
-ActionResult = namedtuple('ActionResult', 'success message sentline exception')
-
-def return_action(**kwargs):
-    for key in set(Action._fields) - set(kwargs):
-        kwargs[key] = None
-    return Action(**kwargs)
-
-def return_successful_result(message="<no message>", sentline=None):
-	return ActionResult(success=True, message=message, sentline=sentline, exception=False)
-
-def return_unsuccessful_result(message="<no message>", sentline=""):
-	return ActionResult(success=False, message=message, sentline=sentline, exception=False)
-
-def return_unimplemented_action(message="<no message>", sentline=None):
-	return ActionResult(success=None, message=message, sentline=sentline, exception=False)
-
-def return_ignored_action():
-	return ActionResult(success=None, message=None, sentline=None, exception=False)
-
-def return_exception(sentline="", message=""):
-	return ActionResult(success=False, message=message, sentline=sentline, exception=True)
 
 def cascading_result(method_calls_tuple_list):
 	"""
@@ -39,11 +15,11 @@ def cascading_result(method_calls_tuple_list):
 				return ret
 	return ret
 
-def extend_template_exceptions(more_exceptions, klass=None):
+def extend_template_exceptions(more_exceptions: '', klass=None):
 	if klass is None:
 		from synctree.templates import DefaultTemplate
 		klass = DefaultTemplate
-	return DefaultTemplate._exceptions + ' ' + more_exceptions
+	return f"{DefaultTemplate._exceptions} {more_exceptions}"
 
 def class_string_to_class(passed_string: 'module.submodule.ClassName'):
 	"""
@@ -65,45 +41,4 @@ def class_string_to_class(passed_string: 'module.submodule.ClassName'):
 		raise ImportError("Cannot import module '{}'".format(passed_string))
 	return getattr(module, class_name.replace('_', ''))
 
-class Wheel:
-	"""
-	Provides interface to cycle through templating system
-	Using the passed gen_obj on __init__, create instance of template, 
-	"""
-	def __init__(self, gen_obj):
-		self.gen_obj = gen_obj
-
-	def __iter__(self):
-		return self.gen_obj()
-
-	def __or__(self, other):  # |
-		"""
-		Syntax:
-		wheel | template
-		wheel object is created via > operator on branches
-		self is an iterable, calls template.__call__ to execute as necessary
-		"""
-
-		# It's possible to be be passed an object at this point
-
-		if isinstance(other, str):
-			other = class_string_to_class(other)
-			other = other()
-
-		# try:
-		# 	if hasattr(other, '_exceptions'):
-		# 		exceptions = getattr(other, '_exceptions')
-		# 	else:
-		# 		exceptions= ''
-		# 	other = augment_template(exceptions)(other)
-		# except TypeError:
-		# 	raise TypeError("Template class or importable string expected")
-
-
-		if not callable(other):
-			raise TypeError("Template class or callable object expected")
-		other.will_start()
-		for item in self:
-			other(item)
-		other.finished()
 
