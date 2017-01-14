@@ -3,9 +3,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from contextlib import contextmanager
 
-import asyncio
-from asyncpgsa import pg
-
 class DBImporter(DefaultImporter):
 	"""
 	A basic DB importer using basic sqlalchemy
@@ -47,25 +44,3 @@ class DBImporter(DefaultImporter):
 class PostgresDBImporter(DBImporter):
 	default_port = 5432
 	dialect = 'postgresql'
-
-class PostgresAsyncDBImporter(PostgresDBImporter):
-
-	def init(self):
-		# Have to first initialize to get 'pg'
-		loop = asyncio.get_event_loop()
-		task = asyncio.ensure_future( self.init_database() )
-		loop.run_until_complete(task)
-
-	async def init_database(self):
-
-		await pg.init(
-		    host=self.get_setting('db_host', 'localhost'),
-		    port=self.get_setting('db_port', self.default_port),
-		    database=self.get_setting('db_database'),
-		    user=self.get_setting('db_user'),
-		    # loop=loop,
-		    password=self.get_setting('db_pass'),
-		    min_size=5,
-		    max_size=10
-		)
-
