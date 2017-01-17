@@ -5,6 +5,7 @@ from synctree.results import exception_during_call, dropped_action
 from synctree.hijacker import coerce_returns_to_list
 import inspect
 from synctree.utils import class_string_to_class
+from collections import defaultdict
 
 class Reporter:
 
@@ -85,7 +86,10 @@ class PrintTemplate(DefaultTemplate):
         print(" Doing it but don't let me!")
 
 class BlockedTemplateWrapper:
-
+    """
+    A template that automatically drops all calls to it.
+    In settings.ini, using :off after subbranch enables this particular class
+    """
     def __init__(self, template, only_these=None, exclude_these=None):
 
         self._template = class_string_to_class(template)()
@@ -104,3 +108,40 @@ class BlockedTemplateWrapper:
     @property
     def template(self):
         return self._template
+
+class LoggerReporter:
+    """
+    Keep records of everything that has been done
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._log = defaultdict(lambda : defaultdict(dict))
+
+    def exception(self, action, result):
+        pass
+
+    def success(self, action, result):
+        pass
+
+    def fail(self, action, result):
+        pass
+
+    def will_start(self):
+        pass
+
+    def finished(self):
+        pass
+
+    def not_implemented(self, action, result):
+        """
+        Override if this
+        """
+        raise TemplateDoesNotImplement(f"{self.__class__.__name__} does not implement method {action.method}")
+
+
+class LoggerReporter:
+    """
+    Keep records of everything that has been done
+    """
+

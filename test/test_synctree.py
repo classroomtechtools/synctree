@@ -3,7 +3,7 @@ import pytest
 from synctree.tree import SyncTree
 from synctree.base import Base
 from synctree.branch import Branch
-from synctree.importers.default_importer import DefaultImporter
+from synctree.importers.default_importer import DefaultImporter, LoggerTemplate
 from synctree.interface import property_interface
 student_properties = 'lastfirst last first'
 import json
@@ -194,6 +194,25 @@ def test_templates():
     action = define_action(method='raises_exception')
     with pytest.raises(ExceptionException): 
         template(action)
+
+
+    class MyLoggerTemplate(LoggerTemplate):
+        def testing(self, action):
+            return success_result(method='testing')
+
+    from synctree.branch import Branch
+
+    branch = Branch('tree (not used)', 'branch', ['subbranch1', 'subbranch2'])
+
+    template = MyLoggerTemplate()
+    source = type('SourceObj', (), {})
+    source.idnumber = '000'
+    source.branch = 'branch'
+    source.subbranch
+    action = define_action(idnumber='000', source=method='testing', idnumber source dest method attribute value old_value)
+    template.testing(action)
+
+
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+import treelib
 from treelib import Tree
 from synctree.base import Base
 from synctree.branch import Branch
