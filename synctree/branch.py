@@ -4,14 +4,19 @@ from synctree.actions import define_action
 from synctree import Wheel
 from functools import partial
 
+
+class NoImporter:
+    pass
+
+
 class Branch:
     _subbranch_class = SubBranch
 
-    def __init__(self, tree, branchname: '', subbranches: [], importers: []):
-        self.is_source = False 
+    def __init__(self, tree, branchname: '', subbranches: [], importers=[NoImporter]):
+        self.is_source = False
         self.tree = tree
         self.branchname = branchname
-        self.subbranches = [sb if not ':' in sb else sb.split(':')[0] for sb in subbranches]
+        self.subbranches = [sb if ':' not in sb else sb.split(':')[0] for sb in subbranches]
         self.importers = importers
         for subbranch in subbranches:
             if ":" in subbranch:
@@ -33,7 +38,7 @@ class Branch:
 
     @property
     def idnumbers(self):
-        return {n.tag for n in self.subtree.all_nodes() if not n.tag in [*self.subbranches, self.branchname]}
+        return {n.tag for n in self.subtree.all_nodes() if n.tag not in [*self.subbranches, self.branchname]}
 
     def get_from_subbranches(self, idnumber, subbranches: ['second_branch', 'first_branch']):
         """

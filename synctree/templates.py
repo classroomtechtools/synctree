@@ -7,6 +7,7 @@ import inspect
 from synctree.utils import class_string_to_class
 from collections import defaultdict
 
+
 class Reporter:
 
     def __init__(self):
@@ -33,6 +34,7 @@ class Reporter:
         """
         raise TemplateDoesNotImplement(f"{self.__class__.__name__} does not implement method {action.method}")
 
+
 class DefaultTemplate:
 
     _exceptions = 'reporter will_start finished'
@@ -42,10 +44,9 @@ class DefaultTemplate:
         """
         Outfit each member so it coerces
         """
-        for prop, method in [(p, m) for p, m in inspect.getmembers(self) if not p.startswith('_') and not p in self._exceptions]:
+        for prop, method in [(p, m) for p, m in inspect.getmembers(self) if not p.startswith('_') and p not in self._exceptions]:
             setattr(self, prop, coerce_returns_to_list(method))
         self.reporter = self._reporter_class()
-
 
     def __call__(self, action):
         """ Route the call according to action, receive the result and pass to self.reporter """
@@ -85,6 +86,7 @@ class PrintTemplate(DefaultTemplate):
     def old_courses(self, action):
         print(" Doing it but don't let me!")
 
+
 class BlockedTemplateWrapper:
     """
     A template that automatically drops all calls to it.
@@ -95,19 +97,20 @@ class BlockedTemplateWrapper:
         self._template = class_string_to_class(template)()
 
         if only_these:
-            identified = [v for v in vars(self._template).keys() if not v in self._template._exceptions and not v in only_these.split(' ')]
+            identified = [v for v in vars(self._template).keys() if v not in self._template._exceptions and v not in only_these.split(' ')]
         elif exclude_these:
-            identified = [v for v in vars(self._template).keys() if not v in self._template._exceptions and v in exclude_these.split(' ')]
+            identified = [v for v in vars(self._template).keys() if v not in self._template._exceptions and v in exclude_these.split(' ')]
 
         for attr in identified:
             # If inside this lambda an exception is raised at runtime we'll have undefined behaviour:
-            setattr(self._template, attr, 
-                lambda action: [dropped_action(method="unimpl: {}".format(action.method))]  # 
+            setattr(self._template, attr,
+                lambda action: [dropped_action(method="unimpl: {}".format(action.method))]
             )
 
     @property
     def template(self):
         return self._template
+
 
 class LoggerReporter:
     """
@@ -116,7 +119,7 @@ class LoggerReporter:
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._log = defaultdict(lambda : defaultdict(dict))
+        self._log = defaultdict(lambda: defaultdict(dict))
 
     def exception(self, action, result):
         pass
@@ -140,8 +143,7 @@ class LoggerReporter:
         raise TemplateDoesNotImplement(f"{self.__class__.__name__} does not implement method {action.method}")
 
 
-class LoggerReporter:
+class LoggerTemplate:
     """
-    Keep records of everything that has been done
     """
-
+    _reporter_class = LoggerReporter

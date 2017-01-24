@@ -3,12 +3,12 @@ import pytest
 from synctree.tree import SyncTree
 from synctree.base import Base
 from synctree.branch import Branch
-from synctree.importers.default_importer import DefaultImporter, LoggerTemplate
+from synctree.importers.default_importer import DefaultImporter
 from synctree.interface import property_interface
 student_properties = 'lastfirst last first'
 import json
 
-# Classes we need
+
 class Student(Base):
     """
     Stuff common to both sides
@@ -19,6 +19,7 @@ class Student(Base):
 class Enrollment(Base):
     pass
 
+
 @property_interface(student_properties, lastfirst="")
 class AStudent(Student):
 
@@ -28,6 +29,7 @@ class AStudent(Student):
     def first(self):
         return self.lastfirst.split(',')[1].strip()
 
+
 @property_interface(student_properties, first="", last="")
 class MStudent(Student):
     """
@@ -35,25 +37,28 @@ class MStudent(Student):
     def lastfirst(self):
         return self.last + ', ' + self.first
 
+
 @property_interface('courses', courses=[])
 class AEnrollment(Enrollment):
     pass
+
 
 @property_interface('courses', courses=[])
 class MEnrollment(Enrollment):
     pass
 
+
 class AStudentImp(DefaultImporter):
-    
     def reader(self):
         yield dict(idnumber='99999', lastfirst="Shmoe, Joe")
         yield dict(idnumber='11111', lastfirst="Student, New")
 
+
 class MStudentImp(DefaultImporter):
-    
     def reader(self):
         yield dict(idnumber='99999', first="Joe", last="Shmoe")
         yield dict(idnumber='zzzzz', first="Withdrawn", last="Student")
+
 
 class AEnrollmentImp(DefaultImporter):
     def reader(self):
@@ -62,9 +67,11 @@ class AEnrollmentImp(DefaultImporter):
         yield dict(idnumber='11111', courses=set(['10A']))
         yield dict(idnumber='11111', courses=set(['10B']))
 
+
 class MEnrollmentImp(DefaultImporter):
     def reader(self):
         yield dict(idnumber='99999', courses=['9A'])
+
 
 def test_init(inspect=False):
 
@@ -74,9 +81,9 @@ def test_init(inspect=False):
     s = SyncTree(
         branches,
         subbranches,
-        ( (AStudent, None, AEnrollment), (MStudent, None, MEnrollment) ),
-        ( (None, None, None), (None, None, None) ),
-        jsonify_root_data = False  # turn off
+        ((AStudent, None, AEnrollment), (MStudent, None, MEnrollment)),
+        ((None, None, None), (None, None, None)),
+        jsonify_root_data=False  # turn off
     )
 
     new_enrollment = '9B'
@@ -102,10 +109,11 @@ def test_init(inspect=False):
     t = SyncTree(
         branches,
         subbranches,
-        ( (AStudent, None, AEnrollment), (MStudent, None, MEnrollment) ),
-        ( (AStudentImp, None, AEnrollmentImp), (MStudentImp, None, MEnrollmentImp) ),
-        jsonify_root_data = False  # turn off
+        ((AStudent, None, AEnrollment), (MStudent, None, MEnrollment)),
+        ((AStudentImp, None, AEnrollmentImp), (MStudentImp, None, MEnrollmentImp)),
+        jsonify_root_data=False  # turn off
     )
+
     +t
     # Test that the opposite side has parameters and same values from original side
     assert t.moodle.students.get('99999').lastfirst == 'Shmoe, Joe'
@@ -114,6 +122,7 @@ def test_init(inspect=False):
 
     assert t.autosend.enrollments.get('99999').courses == ['9A', '9B']  # test the list adding feature
     assert t.autosend.enrollments.get('11111').courses == {'10A', '10B'}  # test the set adding feature
+
 
 def test_templates():
 
@@ -128,6 +137,7 @@ def test_templates():
         dropped_action
 
     import gns
+
 
     class ExceptionException(Exception): pass
     class ExceptionSuccess(Exception): pass
@@ -171,7 +181,7 @@ def test_templates():
             return dropped_action(method=action.method, info='none')
 
         def raises_exception(self):
-            undeclared_variable # raises runtime error, should be eaten up
+            undeclared_variable  # raises runtime error, should be eaten up
 
     template = NewTemplate()
 
@@ -192,25 +202,20 @@ def test_templates():
         template(action)
 
     action = define_action(method='raises_exception')
-    with pytest.raises(ExceptionException): 
+    with pytest.raises(ExceptionException):
         template(action)
 
+    from synctree.templates import LoggerTemplate
 
     class MyLoggerTemplate(LoggerTemplate):
         def testing(self, action):
-            return success_result(method='testing')
+            return successful_result(method='testing')
 
-    from synctree.branch import Branch
-
-    branch = Branch('tree (not used)', 'branch', ['subbranch1', 'subbranch2'])
+    branch = Branch('Tree obj', 'branch', ['subbranch1', 'subbranch2'])
 
     template = MyLoggerTemplate()
-    source = type('SourceObj', (), {})
-    source.idnumber = '000'
-    source.branch = 'branch'
-    source.subbranch
-    action = define_action(idnumber='000', source=method='testing', idnumber source dest method attribute value old_value)
-    template.testing(action)
+    #action = define_action(idnumber='000', source=method='testing', idnumber source dest method attribute value old_value)
+    #template.testing(action)
 
 
 
