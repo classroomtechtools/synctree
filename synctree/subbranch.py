@@ -46,9 +46,9 @@ class SubBranch:
         for node in [_nodes[key] for key in _nodes.keys() if key.startswith(self.parent_keypath + '/')]:
             if node.data is not None:
                 yield node.data
-        # for node in self.subtree.leaves():
-        #     if node.data is not None:  # if data is None, then it is probably a subbranch item itself
-        #         yield node.data
+
+    def __iter__(self):
+        yield from self.get_objects()
 
     def make(self, idnumber, **kwargs):
         """

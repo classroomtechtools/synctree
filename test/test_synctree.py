@@ -115,6 +115,9 @@ def test_init(inspect=False):
     assert t.autosend.enrollments.get('99999').courses == ['9A', '9B']  # test the list adding feature
     assert t.autosend.enrollments.get('11111').courses == {'10A', '10B'}  # test the set adding feature
 
+    # Test iteration on subbranches
+    assert len(list(t.autosend.students)) == 2
+
 def test_templates():
 
     from synctree.templates import DefaultTemplate
