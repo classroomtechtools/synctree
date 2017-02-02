@@ -16,6 +16,7 @@ class Student(Base):
     def name(self):
         return self.first + ' ' + self.last
 
+
 class Enrollment(Base):
     pass
 
@@ -73,12 +74,31 @@ class MEnrollmentImp(DefaultImporter):
         yield dict(idnumber='99999', courses=['9A'])
 
 
+def test_wrappedinit():
+    from synctree.utils import initobj
+    kwargs = dict(hi='hi')
+    tupfactory = initobj('autosend', 'students', **kwargs)
+    tup = tupfactory('9999', **kwargs)
+    assert tup.idnumber == '9999'
+    assert tup.hi == 'hi'
+
+
+def test_barebones():
+    """ Test various init routines """
+    branches = ['autosend', 'moodle']
+    subbranches = ['students', 'staff', 'enrollments']
+
+    tree = SyncTree(branches, subbranches)
+
+    tree.new('autosend', 'enrollments', '99999', courses=['9A', '10B'])
+
+
 def test_init(inspect=False):
 
     branches = ['autosend', 'moodle']
     subbranches = ['students', 'staff', 'enrollments']
 
-    s = SyncTree(
+    tree = SyncTree(
         branches,
         subbranches,
         ((AStudent, None, AEnrollment), (MStudent, None, MEnrollment)),
@@ -87,26 +107,26 @@ def test_init(inspect=False):
     )
 
     new_enrollment = '9B'
-    s.new('autosend', 'enrollments', '99999', courses=['9A', new_enrollment])
-    s.new('moodle', 'enrollments', '99999', courses=['9A'])
-    result = list(s.moodle - s.autosend)
+    tree.new('autosend', 'enrollments', '99999', courses=['9A', new_enrollment])
+    tree.new('moodle', 'enrollments', '99999', courses=['9A'])
+    result = list(tree.moodle - tree.autosend)
     # Add and an update?
     assert len(result) == 1
     assert result[0].value == new_enrollment
-    s.clear()
+    tree.clear()
     # Branches/subbranches should survive a clear
-    assert s.branches == branches
-    assert s.subbranches == subbranches
+    assert tree.branches == branches
+    assert tree.subbranches == subbranches
 
     old_enrollment = '9C'
-    s.new('autosend', 'enrollments', '99999', courses=['9A'])
-    s.new('moodle', 'enrollments', '99999', courses=['9A', old_enrollment])
-    result = list(s.moodle - s.autosend)
+    tree.new('autosend', 'enrollments', '99999', courses=['9A'])
+    tree.new('moodle', 'enrollments', '99999', courses=['9A', old_enrollment])
+    result = list(tree.moodle - tree.autosend)
 
     assert len(result) == 1
     assert result[0].value == old_enrollment
 
-    t = SyncTree(
+    tree = SyncTree(
         branches,
         subbranches,
         ((AStudent, None, AEnrollment), (MStudent, None, MEnrollment)),
@@ -114,19 +134,54 @@ def test_init(inspect=False):
         jsonify_root_data=False  # turn off
     )
 
-    +t
+    +tree
     # Test that the opposite side has parameters and same values from original side
-    assert t.moodle.students.get('99999').lastfirst == 'Shmoe, Joe'
-    assert t.autosend.students.get('99999').first == 'Joe'
-    assert t.autosend.students.get('99999').last == 'Shmoe'
+    assert tree.moodle.students.get('99999').lastfirst == 'Shmoe, Joe'
+    assert tree.autosend.students.get('99999').first == 'Joe'
+    assert tree.autosend.students.get('99999').last == 'Shmoe'
 
-    assert t.autosend.enrollments.get('99999').courses == ['9A', '9B']  # test the list adding feature
-    assert t.autosend.enrollments.get('11111').courses == {'10A', '10B'}  # test the set adding feature
+    assert tree.autosend.enrollments.get('99999').courses == ['9A', '9B']  # test the list adding feature
+    assert tree.autosend.enrollments.get('11111').courses == {'10A', '10B'}  # test the set adding feature
 
+
+def test_narrowing():
+    """
+    Adding a feature which will only return a certain idnumber
+    """
+    b1, b2, sb1, sb2 = ('branch1', 'branch2', 'subbranch1:dict(branch1=["000"],branch2=["000"])', 'subbranch2')
+    brnchs = [b1, b2]
+    sbbrnchs = [sb1, sb2]
+
+    tree = SyncTree(
+        brnchs,
+        sbbrnchs,
+    )
+    tree.new(b1, sb1.split(':')[0], '000', change='this')
+    tree.new(b2, sb1.split(':')[0], '000', change='that')
+    tree.new(b1, sb1.split(':')[0], '001', change='nothing')
+    tree.new(b2, sb1.split(':')[0], '001', change='nothing')
+
+    tree.new(b1, sb2, '999', change='this')
+    tree.new(b2, sb2, '999', change='that')
+    tree.new(b1, sb2, '888', change='nothing')
+    tree.new(b2, sb2, '888', change='nothing')
+
+    subbranch = getattr(getattr(tree, b1), sb2)
+    assert len(subbranch.idnumbers) == 2  # nothing tunrned off
+
+    subbranch = getattr(getattr(tree, b1), sb1.split(':')[0])
+    assert len(subbranch.idnumbers) == 1  # not 2
+    assert subbranch.get('001') != None  # still has it though
+    assert len(list(subbranch)) == 2  # not 1, because iterating still has them
+
+    branch1 = getattr(tree, b1)
+    branch2 = getattr(tree, b2)
+
+    list(branch1 - branch2)
 
 def test_templates():
 
-    from synctree.templates import DefaultTemplate
+    from synctree.templates import DefaultTemplate, LoggerReporter
     from synctree.hijacker import coerce_returns_to_list
     from synctree.utils import extend_template_exceptions
     from synctree.actions import define_action
@@ -206,20 +261,47 @@ def test_templates():
         template(action)
 
     from synctree.templates import LoggerTemplate
+    from collections import defaultdict
+
+
+    class MyBuiltReporter(LoggerReporter):
+
+        def success(self, action, result):
+            self._log[action.source.__subbranch__][action.idnumber].append(result)
+
 
     class MyLoggerTemplate(LoggerTemplate):
-        def testing(self, action):
-            return successful_result(method='testing')
+        _reporter_class = MyBuiltReporter
+        _test_this_string = 'test_this_string'
 
-    branch = Branch('Tree obj', 'branch', ['subbranch1', 'subbranch2'])
+        def update_subbranch1_change(self, action):
+            return successful_result(method=self._test_this_string)
 
+
+    class MyTree(SyncTree):
+        pass
+
+
+    b1, b2, sb1, sb2 = ('branch1', 'branch2', 'subbranch1', 'subbranch2')
+    brnchs = [b1, b2]
+    sbbrnchs = [sb1, sb2]
+    tree = SyncTree(brnchs, sbbrnchs)
+    tree.new(b1, sb1, '000', change='this')
+    tree.new(b2, sb1, '000', change='that')
+
+    results = list(getattr(tree, b1) > getattr(tree, b2))
+    assert len(results) == 1
+    # results[0].method = 
     template = MyLoggerTemplate()
-    #action = define_action(idnumber='000', source=method='testing', idnumber source dest method attribute value old_value)
-    #template.testing(action)
+    (getattr(tree, b1) > getattr(tree, b2)) | template
 
+    assert template.reporter._log[sb1]['000'][0].method == template._test_this_string
 
+    # test to ensure we save the log as we go
+    template = MyLoggerTemplate()
+    assert template.reporter._log[sb1]['000'][0].method == template._test_this_string
 
 
 if __name__ == "__main__":
 
-    test_templates()
+    test_init()

@@ -1,6 +1,7 @@
 import treelib
 import json
 from synctree.actions import define_action
+import ast
 
 class SetEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -8,25 +9,8 @@ class SetEncoder(json.JSONEncoder):
             return list(obj)
         return json.JSONEncoder.default(self, obj)
 
-class Base:
-    """
-    Prepares idnumber
-    Reminder: All non-__ functions end up as properties
-    """
 
-    def __init__(self, expected_kwargs, defaults, idnumber, **kwargs):
-        if set(kwargs.keys()) - set(expected_kwargs) != set():
-            raise TypeError("unexpected kwargs passed:")
-        self.idnumber = idnumber
-        self._kwargs = kwargs
-        for key in kwargs:
-            setattr(self, key, kwargs[key])
-
-    def __repr__(self):
-        return "<{0.__class__.__name__}({0.idnumber})>".format(self)
-
-    def __str__(self):
-        return "<{0.idnumber} of {0.__subbranch__} in {0.__branch__}>".format(self)
+class Basebase:
 
     def _kvargs(self):
         try:
@@ -52,7 +36,7 @@ class Base:
             # This will be picked up in the key comparisons, so skip it
             return
 
-        common = dict(idnumber=self.idnumber, source=self, dest=other)
+        common = dict(idnumber=self.idnumber, obj=self, source=self, dest=other)
 
         attributes = [a for a in dir(self) if a == a.lstrip('_') and not callable(getattr(self, a))]
         for attribute in attributes:
@@ -60,16 +44,16 @@ class Base:
             try:
                 this_attr = getattr(self, attribute)
             except AttributeError:
-                yield define_action(method="err_no_attr:{}".format(attribute), **common)
+                yield define_action(method=f"err_no_attr:{self.__class__.__name__}.{attribute}", **common)
                 continue
             try:
                 that_attr = getattr(other, attribute)
             except AttributeError:
-                yield define_action(method="err_no_attr:{}".format(attribute), **common)
+                yield define_action(method=f"err_no_attr:{other.__class__.__name__}.{attribute}", **common)
                 continue
 
             if type(this_attr) != type(that_attr):
-                yield define_action(method="err_integrity", **common)
+                yield define_action(method=f"err_integrity {type(this_attr)} != {type(that_attr)}", **common)
                 continue
 
             if isinstance(this_attr, list):  # both are lists
@@ -86,4 +70,26 @@ class Base:
 
             elif this_attr != that_attr:
                 yield define_action(method="update_{}_{}".format(other.__subbranch__, attribute), value=this_attr, old_value=that_attr, **common)
+
+
+class Base(Basebase):
+    """
+    Prepares idnumber
+    Reminder: All non-__ functions end up as properties
+    """
+
+    def __init__(self, expected_kwargs, defaults, idnumber, **kwargs):
+        if set(kwargs.keys()) - set(expected_kwargs) != set():
+            raise TypeError("unexpected kwargs passed:")
+        self.idnumber = idnumber
+        self._kwargs = kwargs
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+
+    def __repr__(self):
+        return "<{0.__class__.__name__}({0.idnumber})>".format(self)
+
+    def __str__(self):
+        return "<{0.idnumber} of {0.__subbranch__} in {0.__branch__}>".format(self)
+
 

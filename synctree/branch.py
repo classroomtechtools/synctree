@@ -1,9 +1,11 @@
-from synctree.subbranch import SubBranch, SubBranchOff
+from synctree.subbranch import SubBranch, SubBranchOff, SubBranchNarrow
 from synctree.actions import define_action
 
 from synctree import Wheel
 from functools import partial
 
+import ast
+import weakref
 
 class NoImporter:
     pass
@@ -12,19 +14,22 @@ class NoImporter:
 class Branch:
     _subbranch_class = SubBranch
 
-    def __init__(self, tree, branchname: '', subbranches: [], importers=[NoImporter]):
+    def __init__(self, tree, branchname: None, subbranches: None, importers=None):
         self.is_source = False
-        self.tree = tree
-        self.branchname = branchname
+        self.tree = weakref.proxy(tree)
+        self.branchname = branchname or ''
+        subbranches = subbranches or []
         self.subbranches = [sb if ':' not in sb else sb.split(':')[0] for sb in subbranches]
-        self.importers = importers
+        self.importers = importers or {sb: None for sb in subbranches}
         for subbranch in subbranches:
             if ":" in subbranch:
                 subbranch, command = subbranch.split(':')
                 if command.lower() == 'off':
                     subbranch_class = SubBranchOff
-                else:
-                    subbranch_class = self._subbranch_class
+                elif command:
+                    command_dict = eval(command)
+                    to_narrow = command_dict[self.branchname]
+                    subbranch_class = SubBranchNarrow(to_narrow)
             else:
                 subbranch_class = self._subbranch_class
             setattr(self, subbranch, subbranch_class(self, subbranch, self.importers[subbranch]))
@@ -79,17 +84,21 @@ class Branch:
         """
         if self.subbranches != other.subbranches:
             raise TypeError("Subbranches cannot be compared with unlike subbranches")
+
         for subbranch in self.subbranches:
             leftsubbranch = getattr(self, subbranch)
             rightsubbranch = getattr(other, subbranch)
+
             for idnumber in leftsubbranch - rightsubbranch:
                 # items only appearing in left
                 l = leftsubbranch.get(idnumber)
-                yield define_action(idnumber=idnumber, value=l, source=l, dest=None, method='new_{}'.format(subbranch))
+                yield define_action(idnumber=idnumber, value=l, obj=l, source=l, dest=None, method='new_{}'.format(subbranch))
+
             for idnumber in rightsubbranch - leftsubbranch:
                 # items only appearing in right
                 r = rightsubbranch.get(idnumber)
-                yield define_action(idnumber=idnumber, value=r, source=None, dest=r, method='old_{}'.format(subbranch))
+                yield define_action(idnumber=idnumber, value=r, obj=r, source=None, dest=r, method='old_{}'.format(subbranch))
+
             for idnumber in leftsubbranch & rightsubbranch:
                 # common items
                 lobj = leftsubbranch.get(idnumber)
