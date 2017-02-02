@@ -1,5 +1,22 @@
 import importlib, inspect
 
+from collections import namedtuple
+from synctree.base import Basebase
+
+
+class initobj:
+	"""
+	"""
+	def __init__(self, branch, subbranch, **kwargs):
+		self._obj = type('{0}{1}'.format(branch.title(), subbranch.title()), (Basebase,) , {})()
+
+	def __call__(self, idnumber, **kwargs):
+		self._obj.idnumber = idnumber
+		for key in kwargs:
+			setattr(self._obj, key, kwargs[key])
+		return self._obj
+
+
 def cascading_result(method_calls_tuple_list):
 	"""
 	When passed a list of method calls with the accompanying arguments,
@@ -15,11 +32,13 @@ def cascading_result(method_calls_tuple_list):
 				return ret
 	return ret
 
+
 def extend_template_exceptions(more_exceptions: '', klass=None):
 	if klass is None:
 		from synctree.templates import DefaultTemplate
 		klass = DefaultTemplate
 	return f"{DefaultTemplate._exceptions} {more_exceptions}"
+
 
 def class_string_to_class(passed_string: 'module.submodule.ClassName'):
 	"""

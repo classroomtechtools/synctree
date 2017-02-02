@@ -3,6 +3,7 @@ import inspect
 import copy
 import functools
 
+
 class Interface(metaclass=ABCMeta):
     def __init__(self, idnumber, **kwargs):
         too_many = set(kwargs.keys()) - set(self._defaults.keys())
@@ -32,6 +33,7 @@ class Interface(metaclass=ABCMeta):
                         f"Attr '{key}' in {self.__class__.__name__} has inconsistency in model and importer.\n"
                         "Root cause unknown"
                     ) 
+
 
 class property_interface(object):
     """

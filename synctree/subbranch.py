@@ -2,25 +2,35 @@ from collections import defaultdict
 import inspect
 from treelib.tree import DuplicatedNodeIdError as Duplicated
 from synctree.importers.default_importer import DefaultImporter
+import weakref
 
 class SubBranch:
     def __init__(self, branch, subbranchname, importer):
-        self.branch = branch
+        self.branch = weakref.proxy(branch)
         self.subbranchname = subbranchname
         self.parent_keypath = self.branch.tree.keypath(self.branch.branchname, self.subbranchname)
         self._importer_klass = importer
+
+    def __iter__(self):
+        yield from self.get_objects()
 
     @property
     def path_delim(self):
         return self.branch.tree.path_delim
 
     @property
+    def _idnumbers(self):
+        ret = {
+            key.split(self.path_delim)[-1] for key in self.branch.tree._nodes \
+                if not key.endswith(self.subbranchname) and \
+                   key.startswith(f"{self.parent_keypath}{self.path_delim}")
+        }
+        return ret
+
+    @property
     def idnumbers(self):
-        return {
-            key.split(self.path_delim)[-1] \
-                for key in self.branch.tree._nodes \
-                    if not key.endswith(self.subbranchname) and key.startswith(self.parent_keypath + self.path_delim)
-            }
+        """ can be overridden to limit or narrow results """
+        return self._idnumbers
 
     @property
     def subtree(self):
@@ -43,12 +53,17 @@ class SubBranch:
 
     def get_objects(self):
         _nodes = self.branch.tree._nodes
-        for node in [_nodes[key] for key in _nodes.keys() if key.startswith(self.parent_keypath + '/')]:
+        for node in [_nodes[self.path_delim.join([self.branch.branchname, self.subbranchname, key])] for key in self.idnumbers]:
             if node.data is not None:
                 yield node.data
 
-    def __iter__(self):
-        yield from self.get_objects()
+    def get_objects_force_all(self):
+        """ Should be used for """
+        idnumbers = self._idnumbers
+        _nodes = self.branch.tree._nodes
+        for node in [_nodes[self.path_delim.join([self.branch.branchname, self.subbranchname, key])] for key in idnumbers]:
+            if node.data is not None:
+                yield node.data
 
     def make(self, idnumber, **kwargs):
         """
@@ -144,6 +159,7 @@ class SubBranch:
     def __repr__(self):
         return "{0.__class__.__name__}({0.branch}, {0.subbranchname})".format(self)
 
+
 class SubBranchOff(SubBranch):
     """
     A particular subbranch that does not take part in the differences mechnaism, and excludes it from sync commands
@@ -161,3 +177,24 @@ class SubBranchOff(SubBranch):
         Common idnumbers
         """
         yield from []
+
+    def __iter__(self):
+        yield from self.get_objects_force_all()
+
+
+class SubBranchNarrow(SubBranch):
+    """ wrapper class """
+    def __init__(self, to_narrow):
+        self._to_narrow = to_narrow
+
+    @property
+    def idnumbers(self):
+        """ Only return what was passed to me """
+        return set(self._to_narrow)
+
+    def __call__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        return self
+
+    def __iter__(self):
+        yield from self.get_objects_force_all()

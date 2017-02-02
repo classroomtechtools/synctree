@@ -5,6 +5,7 @@ from synctree.results import exception_during_call, dropped_action
 from synctree.hijacker import coerce_returns_to_list
 import inspect
 from synctree.utils import class_string_to_class
+from collections import defaultdict
 
 class Reporter:
 
@@ -32,19 +33,22 @@ class Reporter:
         """
         raise TemplateDoesNotImplement(f"{self.__class__.__name__} does not implement method {action.method}")
 
+
 class DefaultTemplate:
 
-    _exceptions = 'reporter will_start finished'
+    _exceptions = 'init reporter will_start finished'
     _reporter_class = Reporter
 
     def __init__(self):
         """
         Outfit each member so it coerces
         """
-        for prop, method in [(p, m) for p, m in inspect.getmembers(self) if not p.startswith('_') and not p in self._exceptions]:
+        for prop, method in [(p, m) for p, m in inspect.getmembers(self) if not p.startswith('_') and p not in self._exceptions]:
             setattr(self, prop, coerce_returns_to_list(method))
-        self.reporter = self._reporter_class()
+        self.init()
 
+    def init(self):
+        self.reporter = self._reporter_class()
 
     def __call__(self, action):
         """ Route the call according to action, receive the result and pass to self.reporter """
@@ -84,23 +88,67 @@ class PrintTemplate(DefaultTemplate):
     def old_courses(self, action):
         print(" Doing it but don't let me!")
 
+
 class BlockedTemplateWrapper:
+    """
+    A template that automatically drops all calls to it.
+    In settings.ini, using :off after subbranch enables this particular class
+    """
+    def __init__(self, template, mock=False, only_these=None, exclude_these=None):
 
-    def __init__(self, template, only_these=None, exclude_these=None):
-
-        self._template = class_string_to_class(template)()
+        template_klass = class_string_to_class(template)
+        template_klass._mock = mock
+        self._template = template_klass()
 
         if only_these:
-            identified = [v for v in vars(self._template).keys() if not v in self._template._exceptions and not v in only_these.split(' ')]
+            identified = [v for v in vars(self._template).keys() if v not in self._template._exceptions and v not in only_these.split(' ')]
         elif exclude_these:
-            identified = [v for v in vars(self._template).keys() if not v in self._template._exceptions and v in exclude_these.split(' ')]
+            identified = [v for v in vars(self._template).keys() if v not in self._template._exceptions and v in exclude_these.split(' ')]
 
         for attr in identified:
             # If inside this lambda an exception is raised at runtime we'll have undefined behaviour:
-            setattr(self._template, attr, 
-                lambda action: [dropped_action(method="unimpl: {}".format(action.method))]  # 
+            setattr(self._template, attr,
+                lambda action: [dropped_action(method="unimpl: {}".format(action.method))]
             )
 
     @property
     def template(self):
         return self._template
+
+
+class LoggerReporter:
+    """
+    Keep records of everything that has been done
+    """
+    _log = defaultdict(lambda: defaultdict(list))
+
+    def append_this(self, action, obj):
+        self._log[action.obj.__subbranch__][action.idnumber].append(obj)
+
+    def exception(self, action, result):
+        self._log[action.obj.__subbranch__][action.idnumber].append((action, result))
+
+    def success(self, action, result):
+        self._log[action.obj.__subbranch__][action.idnumber].append((action, result))
+
+    def fail(self, action, result):
+        self._log[action.obj.__subbranch__][action.idnumber].append((action, result))
+
+    def will_start(self):
+        pass
+
+    def finished(self):
+        pass
+
+    def not_implemented(self, action, result):
+        """
+        Override if this
+        """
+        # FIXME: Where to store the context info?
+        self._log['unimplemented'][result.method].append(result)
+
+
+class LoggerTemplate(DefaultTemplate):
+    """
+    """
+    _reporter_class = LoggerReporter

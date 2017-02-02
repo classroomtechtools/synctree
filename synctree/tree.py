@@ -1,3 +1,4 @@
+import treelib
 from treelib import Tree
 from synctree.base import Base
 from synctree.branch import Branch
@@ -6,6 +7,9 @@ from synctree.utils import class_string_to_class
 
 import json
 from collections import defaultdict
+from synctree.utils import initobj
+import pickle
+
 
 class JsonEncoder(json.JSONEncoder):
     def __init__(self, *args, **kwargs):
@@ -22,6 +26,7 @@ class JsonEncoder(json.JSONEncoder):
             return obj._to_json
         return super().encode(self, obj)
 
+
 class SyncTree(Tree):
     path_delim = '/'
     rootname = 'root'
@@ -29,63 +34,55 @@ class SyncTree(Tree):
     def __init__(self, 
                  branches, 
                  subbranches, 
-                 model_klass_list: '( (classstr, classstr, ..), (classstr, classstr, ..) )',
-                 importer_klass_list: '( (classstr, classstr, ..), (classstr, classstr, ..) )',
+                 model_klass_list: '( (classstr, classstr, ..), (classstr, classstr, ..) )' = None,
+                 importer_klass_list: '( (classstr, classstr, ..), (classstr, classstr, ..) )' = None,
                  branch_class=None,
-                 template_class=None,
                  jsonify_root_data=True):
         """
         """
         super().__init__()
-        self.model_klass_list = model_klass_list
-        self.importer_klass_list = importer_klass_list
+        self.model_klass_list = model_klass_list or [[None] * len(subbranches)] * len(branches)
+        self.importer_klass_list = importer_klass_list or [[None] * len(subbranches)] * len(branches)
         self._branch_class = branch_class if branch_class else Branch
-        self._objs = {}
 
         # Prepare variables, remove any :off or like commands at this point
         self.branches = branches
         self.subbranches = [sb if not ':' in sb else sb.split(':')[0] for sb in subbranches]
 
-        # If model or importer class is passed as a string, coerce it into a list of a list
-        if type(model_klass_list) == str:
-            model_klasses = []
+        # If model or importer class is passed as a pattern string, coerce it into a list of a list
+        if isinstance(self.model_klass_list, str):
+            self.model_klass_list = []
             for i, branch in enumerate(self.branches):
                 for j, subbranch in enumerate(self.subbranches):
-                    if len(model_klasses) == i:
-                        model_klasses.append([])
-                    model_klasses[i].append(model_klass_list.format(branch=branch, branch_title=branch.title(), subbranch_title=subbranch.title()))
-        else:
-            model_klasses = model_klass_list
+                    if len(self.model_klass_list) == i:
+                        self.model_klass_list.append([])
+                    self.model_klass_list[i].append(model_klass_list.format(branch=branch, branch_title=branch.title(), subbranch_title=subbranch.title()))
 
-        # If model or importer class is passed as a string, coerce it into a list of a list
-        # If model or importer class is passed as a string, coerce it into a list of a list
-        if type(importer_klass_list) == str:
-            importer_klasses = []
+        if isinstance(self.importer_klass_list, str):
+            self.importer_klass_list = []
             for i, branch in enumerate(self.branches):
                 for j, subbranch in enumerate(self.subbranches):
-                    if len(importer_klasses) == i:
-                        importer_klasses.append([])
-                    importer_klasses[i].append(importer_klass_list.format(branch=branch, branch_title=branch.title(), subbranch_title=subbranch.title()))
-        else:
-            importer_klasses = importer_klass_list
+                    if len(self.importer_klass_list) == i:
+                        self.importer_klass_list.append([])
+                    self.importer_klass_list[i].append(importer_klass_list.format(branch=branch, branch_title=branch.title(), subbranch_title=subbranch.title()))
 
         # Prepare self._model_klasses
-        if len(model_klasses[0]) + len(model_klasses[1]) != len(self.branches) * len(self.subbranches):
+        if sum(map(len, self.model_klass_list)) != len(self.branches) * len(self.subbranches):
             raise ValueError("Must be equal")
-        if len(model_klasses[0]) + len(model_klasses[1]) != len(importer_klasses[0]) + len(importer_klasses[1]):
+        if sum(map(len, self.model_klass_list)) != sum(map(len, self.importer_klass_list)):
             raise ValueError("Still not equal")
 
         self._model_klasses = defaultdict(lambda : defaultdict(list))
         self._importer_klasses = defaultdict(lambda : defaultdict(list))
 
         # Convert prepared into actual classes through importation process
-        for i1, klasses in enumerate(model_klasses):
+        for i1, klasses in enumerate(self.model_klass_list):
             b = branches[i1]  # branch
             for i2, _ in enumerate(klasses):
                 sb = self.subbranches[i2]
-                klass_str = model_klasses[i1][i2]
+                klass_str = self.model_klass_list[i1][i2]
                 self._model_klasses[b][sb] = class_string_to_class(klass_str)
-                klass_str = importer_klasses[i1][i2]
+                klass_str = self.importer_klass_list[i1][i2]
                 self._importer_klasses[b][sb] = class_string_to_class(klass_str)
 
         rootdata = dict(
@@ -94,8 +91,10 @@ class SyncTree(Tree):
             model_klass_list = self.model_klass_list,
             importer_klass_list = self.importer_klass_list,
         )
+
         if jsonify_root_data:
             rootdata = json.dumps(rootdata)
+
         self.create_node(self.rootname, self.rootname, data=rootdata)
         for branch in self.branches:
             i = branches.index(branch)
@@ -117,16 +116,17 @@ class SyncTree(Tree):
 
     def new(self, *pth: ['branch', 'subranch', 'idnumber'], **kwargs):
         """ 
-        
+        Create a new object 
         """
-        # First make the object
         branch, subbranch, idnumber = pth
 
-        klass = self._model_klasses[branch][subbranch]
+        klass = self._model_klasses[branch][subbranch] or initobj(branch, subbranch, **kwargs)
         try:
             obj = klass(idnumber, **kwargs)
         except TypeError:
             raise TypeError('Expecting {0._properties} but got {1}'.format(klass, kwargs))
+
+        # Augment the class name to hold branch and subbranch info
         obj.__branch__ = branch
         obj.__subbranch__ = subbranch
 
@@ -136,7 +136,7 @@ class SyncTree(Tree):
         # Augment this after creation so we can use it for tree operations
         # We have to get the result back
         result = self.create_node(idnumber, key, parent=parent, data=obj)
-        obj._node = result
+        obj._node_identifier = result.identifier
         #
 
     def store(self, path):
@@ -189,12 +189,14 @@ class SyncTree(Tree):
         Remove items in all subbranches of branches
         Does not change the branches/subbranches
         """
-        for b in self.branches:
-            branch = getattr(self, b)
-            for s in branch.subbranches:
-                subbranch = getattr(branch, s)
-                for item in subbranch.get_objects():
-                    self.remove_node(item._node.identifier)
+        self.remove_subtree('root')
+
+        # for b in self.branches:
+        #     branch = getattr(self, b)
+        #     for s in branch.subbranches:
+        #         subbranch = getattr(branch, s)
+        #         for item in subbranch.get_objects():
+        #             self.remove_node(item._node_identifier)
 
     def __call__(self, idnumber):
         """
