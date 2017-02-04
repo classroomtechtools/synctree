@@ -11,7 +11,7 @@ class SetEncoder(json.JSONEncoder):
 
 
 class Basebase:
-
+    __slots__ = ['__branch__', '__subbranch__', '_node_identifier']
     def _kvargs(self):
         try:
             return sorted({k:getattr(self, k) for k in dir(self) if not k.startswith('_')}.items(), key=lambda o: o[0])
@@ -77,10 +77,8 @@ class Base(Basebase):
     Prepares idnumber
     Reminder: All non-__ functions end up as properties
     """
-
-    def __init__(self, expected_kwargs, defaults, idnumber, **kwargs):
-        if set(kwargs.keys()) - set(expected_kwargs) != set():
-            raise TypeError("unexpected kwargs passed:")
+    __slots__ = ['idnumber', '_kwargs']
+    def __init__(self, idnumber, **kwargs):
         self.idnumber = idnumber
         self._kwargs = kwargs
         for key in kwargs:

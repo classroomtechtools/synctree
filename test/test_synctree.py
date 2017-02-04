@@ -5,7 +5,7 @@ from synctree.base import Base
 from synctree.branch import Branch
 from synctree.importers.default_importer import DefaultImporter
 from synctree.interface import property_interface
-student_properties = 'lastfirst last first'
+student_properties = ['lastfirst', 'last', 'first']
 import json
 
 
@@ -13,40 +13,45 @@ class Student(Base):
     """
     Stuff common to both sides
     """
+    __slots__ = student_properties
+
+    @property
     def name(self):
         return self.first + ' ' + self.last
 
 
 class Enrollment(Base):
-    pass
+    __slots__ = ['courses']
 
 
-@property_interface(student_properties, lastfirst="")
 class AStudent(Student):
+    __slots__ = []
 
+    @property
     def last(self):
         return self.lastfirst.split(',')[0].strip()
 
+    @property
     def first(self):
         return self.lastfirst.split(',')[1].strip()
 
 
-@property_interface(student_properties, first="", last="")
 class MStudent(Student):
     """
     """
+    __slots__ = []
+
+    @property
     def lastfirst(self):
         return self.last + ', ' + self.first
 
 
-@property_interface('courses', courses=[])
 class AEnrollment(Enrollment):
-    pass
+    __slots__ = []
 
 
-@property_interface('courses', courses=[])
 class MEnrollment(Enrollment):
-    pass
+    __slots__ = []
 
 
 class AStudentImp(DefaultImporter):
@@ -180,7 +185,7 @@ def test_narrowing():
     list(branch1 - branch2)
 
     # Test iteration on subbranches
-    assert len(list(t.autosend.students)) == 2
+    assert len(list(tree.branch1.subbranch1)) == 2
 
 def test_templates():
 

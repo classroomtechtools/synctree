@@ -44,6 +44,7 @@ class SyncTree(Tree):
         self.model_klass_list = model_klass_list or [[None] * len(subbranches)] * len(branches)
         self.importer_klass_list = importer_klass_list or [[None] * len(subbranches)] * len(branches)
         self._branch_class = branch_class if branch_class else Branch
+        self._subbranches = subbranches  # store it away for when we need commands and the like
 
         # Prepare variables, remove any :off or like commands at this point
         self.branches = branches
@@ -93,12 +94,18 @@ class SyncTree(Tree):
         )
 
         if jsonify_root_data:
+            # This feature is used in order to re-create for later
             rootdata = json.dumps(rootdata)
 
+        # Make permanent root object, init clear-able branches and subbranches
         self.create_node(self.rootname, self.rootname, data=rootdata)
+        self.init_branches_subbranches()
+        #
+
+    def init_branches_subbranches(self):
+
         for branch in self.branches:
-            i = branches.index(branch)
-            branch_obj = self._branch_class(self, branch, subbranches, self._importer_klasses[branch])   # use subbranches, not self.subbranches
+            branch_obj = self._branch_class(self, branch, self._subbranches, self._importer_klasses[branch])   # use _subbranches, not self.subbranches
             self.create_node(
                 branch, branch.lower(), parent=self.rootname, 
             )
@@ -107,6 +114,16 @@ class SyncTree(Tree):
                 self.create_node(
                     subbranch, self.path_delim.join([branch, subbranch]), parent=branch.lower(),
                 )
+
+    def clear(self):
+        """
+        Remove branches, leaving root alone
+        """
+        for b in self.branches:
+            branch = getattr(self, b)
+            node_to_remove = f"{branch.branchname}"
+            self.remove_subtree(node_to_remove)
+        self.init_branches_subbranches()
 
     def keypath(self, *pth):
         """
@@ -121,10 +138,10 @@ class SyncTree(Tree):
         branch, subbranch, idnumber = pth
 
         klass = self._model_klasses[branch][subbranch] or initobj(branch, subbranch, **kwargs)
-        try:
-            obj = klass(idnumber, **kwargs)
-        except TypeError:
-            raise TypeError('Expecting {0._properties} but got {1}'.format(klass, kwargs))
+        #try:
+        obj = klass(idnumber, **kwargs)
+        # except TypeError:
+        #     raise TypeError('Expecting {0._properties} but got {1}'.format(klass, kwargs))
 
         # Augment the class name to hold branch and subbranch info
         obj.__branch__ = branch
@@ -183,20 +200,6 @@ class SyncTree(Tree):
         Make the objects serializable
         """
         return json.dumps(self.to_dict(with_data=True, **kwargs), cls=JsonEncoder)
-
-    def clear(self):
-        """
-        Remove items in all subbranches of branches
-        Does not change the branches/subbranches
-        """
-        self.remove_subtree('root')
-
-        # for b in self.branches:
-        #     branch = getattr(self, b)
-        #     for s in branch.subbranches:
-        #         subbranch = getattr(branch, s)
-        #         for item in subbranch.get_objects():
-        #             self.remove_node(item._node_identifier)
 
     def __call__(self, idnumber):
         """
