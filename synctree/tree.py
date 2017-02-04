@@ -39,8 +39,11 @@ class SyncTree(Tree):
                  branch_class=None,
                  jsonify_root_data=True):
         """
+        Makes a tree-like structure that mirrors, used to hold data used to send on operations
+        to a synctree template
         """
         super().__init__()
+        self._relations = defaultdict(list)
         self.model_klass_list = model_klass_list or [[None] * len(subbranches)] * len(branches)
         self.importer_klass_list = importer_klass_list or [[None] * len(subbranches)] * len(branches)
         self._branch_class = branch_class if branch_class else Branch
@@ -61,11 +64,11 @@ class SyncTree(Tree):
 
         if isinstance(self.importer_klass_list, str):
             self.importer_klass_list = []
-            for i, branch in enumerate(self.branches):
-                for j, subbranch in enumerate(self.subbranches):
-                    if len(self.importer_klass_list) == i:
+            for branch_index, branch in enumerate(self.branches):
+                for subbranch_index, subbranch in enumerate(self.subbranches):
+                    if len(self.importer_klass_list) == branch_index:
                         self.importer_klass_list.append([])
-                    self.importer_klass_list[i].append(importer_klass_list.format(branch=branch, branch_title=branch.title(), subbranch_title=subbranch.title()))
+                    self.importer_klass_list[branch_index].append(importer_klass_list.format(branch=branch, branch_title=branch.title(), subbranch_title=subbranch.title()))
 
         # Prepare self._model_klasses
         if sum(map(len, self.model_klass_list)) != len(self.branches) * len(self.subbranches):
@@ -138,10 +141,7 @@ class SyncTree(Tree):
         branch, subbranch, idnumber = pth
 
         klass = self._model_klasses[branch][subbranch] or initobj(branch, subbranch, **kwargs)
-        #try:
         obj = klass(idnumber, **kwargs)
-        # except TypeError:
-        #     raise TypeError('Expecting {0._properties} but got {1}'.format(klass, kwargs))
 
         # Augment the class name to hold branch and subbranch info
         obj.__branch__ = branch
@@ -154,12 +154,29 @@ class SyncTree(Tree):
         # We have to get the result back
         result = self.create_node(idnumber, key, parent=parent, data=obj)
         obj._node_identifier = result.identifier
-        #
+        
+        return obj
 
     def store(self, path):
         with open(path, 'w') as _f:
             json.dump(json.loads(self.to_json()), _f, indent=4)
 
+    def show(self, *args, **kwargs):
+        if len(args) == 0:
+            super().show(**kwargs)
+        else:
+            subbranch, idnumber, *_ = args
+            kwargs['data_property'] = '_to_json'
+            for branch in self.branches:
+                print(f"{branch}/{subbranch}/{idnumber}:")
+                path_to_node = f"{branch}{self.path_delim}{subbranch}{self.path_delim}{idnumber}"
+                super().show(path_to_node, **kwargs)
+                for subbranch_to in self._relations[subbranch]:
+                    path_to_node = f"{branch}{self.path_delim}{subbranch_to}{self.path_delim}{idnumber}"
+                    try:
+                        super().show(path_to_node, **kwargs)
+                    except treelib.tree.NodeIDAbsentError:
+                        print(f"<no {subbranch_to}>")
     @classmethod
     def from_file(cls, path):
         """
@@ -195,11 +212,29 @@ class SyncTree(Tree):
                                 t.new(branch, subbranch, idnumber, **kwargs)
         return t
 
+    def register_relations(self, subbranches_from, subbranches_to):
+        """
+        Make it clear to the tree that idnumbers are shared between subbranches
+        Useful for debugging
+        """
+        if not isinstance(subbranches_from, list):
+            subbranches_from = [subbranches_from]
+        if not isinstance(subbranches_to, list):
+            subbranches_to = [subbranches_to]
+        for subbranch_from in list(subbranches_from):
+            for subbranch_to in list(subbranches_to):
+                self._relations[subbranch_from].append(subbranch_to)
+
+
     def to_json(self, **kwargs):
         """
         Make the objects serializable
         """
         return json.dumps(self.to_dict(with_data=True, **kwargs), cls=JsonEncoder)
+
+    def __repr__(self):
+        """  """
+        return f"SyncTree(branches={self.branches}, subbranches={self.subbranches})"
 
     def __call__(self, idnumber):
         """

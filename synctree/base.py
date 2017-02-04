@@ -2,6 +2,7 @@ import treelib
 import json
 from synctree.actions import define_action
 import ast
+import copy
 
 class SetEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -12,17 +13,27 @@ class SetEncoder(json.JSONEncoder):
 
 class Basebase:
     __slots__ = ['__branch__', '__subbranch__', '_node_identifier']
+
+    def __init__(self, idnumber, **kwargs):
+        self.idnumber = idnumber
+        self._kwargs = kwargs
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+
     def _kvargs(self):
         try:
             return sorted({k:getattr(self, k) for k in dir(self) if not k.startswith('_')}.items(), key=lambda o: o[0])
         except TypeError:
             raise TypeError("No need to add property decorator to instance methods")
 
+    @property
     def _to_json(self):
         """ 
         Returns a string
         """
-        return json.dumps(self._kwargs, cls=SetEncoder)
+        kwargs = copy.copy(self._kwargs)
+        kwargs['idnumber'] = self.idnumber
+        return json.dumps(kwargs, cls=SetEncoder)
 
     def __sub__(self, other):
         """
@@ -72,17 +83,16 @@ class Basebase:
                 yield define_action(method="update_{}_{}".format(other.__subbranch__, attribute), value=this_attr, old_value=that_attr, **common)
 
 
+    def __repr__(self):
+        return f"<{self.__class__.__name__}({self.idnumber})>"
+
+
 class Base(Basebase):
     """
     Prepares idnumber
     Reminder: All non-__ functions end up as properties
     """
     __slots__ = ['idnumber', '_kwargs']
-    def __init__(self, idnumber, **kwargs):
-        self.idnumber = idnumber
-        self._kwargs = kwargs
-        for key in kwargs:
-            setattr(self, key, kwargs[key])
 
     def __repr__(self):
         return "<{0.__class__.__name__}({0.idnumber})>".format(self)

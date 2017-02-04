@@ -84,7 +84,7 @@ list(synctree.source - synctree.destination)  # operator overload indicates "fin
 Output:
 
 ```
-[Action(idnumber='111', obj=<synctree.utils.SourceStudents object at 0x1017661d8>, source=<synctree.utils.SourceStudents object at 0x1017661d8>, dest=<synctree.utils.DestinationStudents object at 0x1017662c8>, method='update_students_grade', attribute='grade', value=7, old_value=6)]
+[Action(idnumber='111', obj=<SourceStudents(111)>, source=<SourceStudents(111)>, dest=<DestinationStudents(111)>, method='update_students_grade', attribute='grade', value=7, old_value=6)]
 ```
 
 Notice that Synctree has identified the values that have changed, and created a string "update_students_grade" which we can use to operate upon. Let's make a class with a method that corresponds to that string:
@@ -109,10 +109,12 @@ We can automate this by refining our template's method to return a ```Template.s
 
 ```python
 from synctree.templates import DefaultTemplate
+from synctree.results import successful_result
+
 class Template(DefaultTemplate):
     def update_students_grade(self, action):
         print("Update!")
-        return self.successful_result(method=action.method, info="")
+        return successful_result(method=action.method, info="")
 template = Template()
 
 (synctree.source > synctree.destination) | template

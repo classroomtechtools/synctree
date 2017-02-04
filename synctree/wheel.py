@@ -21,23 +21,13 @@ class Wheel:
 		"""
 
 		# It's possible to be be passed an object at this point
-
 		if isinstance(other, str):
 			other = class_string_to_class(other)
 			other = other()
 
-		# try:
-		# 	if hasattr(other, '_exceptions'):
-		# 		exceptions = getattr(other, '_exceptions')
-		# 	else:
-		# 		exceptions= ''
-		# 	other = augment_template(exceptions)(other)
-		# except TypeError:
-		# 	raise TypeError("Template class or importable string expected")
-
-
 		if not callable(other):
 			raise TypeError("Template class or callable object expected")
+		#print(other.reporter.will_start)
 		other.reporter.will_start()
 		for item in self:
 			other(item)

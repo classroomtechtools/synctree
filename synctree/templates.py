@@ -5,7 +5,8 @@ from synctree.results import exception_during_call, dropped_action
 from synctree.hijacker import coerce_returns_to_list
 import inspect
 from synctree.utils import class_string_to_class
-from collections import defaultdict
+from collections import defaultdict, namedtuple
+
 
 class Reporter:
 
@@ -36,8 +37,8 @@ class Reporter:
 
 class DefaultTemplate:
 
-    _exceptions = 'init reporter will_start finished'
-    _reporter_class = Reporter
+    _exceptions = 'init reporter will_start finished successful_result unsucessful_result dropped_action exception_during_call'
+    _reporter = Reporter
 
     def __init__(self):
         """
@@ -48,7 +49,7 @@ class DefaultTemplate:
         self.init()
 
     def init(self):
-        self.reporter = self._reporter_class()
+        self.reporter = self._reporter()
 
     def __call__(self, action):
         """ Route the call according to action, receive the result and pass to self.reporter """
@@ -63,6 +64,7 @@ class DefaultTemplate:
             # We can expect it to be a list
             for return_item in method_to_be_called(action):
                 if return_item.exception is True:
+                    print(return_item)
                     self.reporter.exception(action, return_item)
                 else:
                     if return_item.success is True:

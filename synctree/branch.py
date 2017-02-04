@@ -122,5 +122,6 @@ class Branch:
     def __repr__(self):
         return "{0.__class__.__name__}({0.tree}, {0.branchname}, {0.subbranches})".format(self)
 
+
 class MoodleBranch:
     pass

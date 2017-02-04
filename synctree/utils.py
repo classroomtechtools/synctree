@@ -8,12 +8,10 @@ class initobj:
 	"""
 	"""
 	def __init__(self, branch, subbranch, **kwargs):
-		self._obj = type('{0}{1}'.format(branch.title(), subbranch.title()), (Basebase,) , {})()
+		self._klass_name = f'{branch.title()}{subbranch.title()}'
 
 	def __call__(self, idnumber, **kwargs):
-		self._obj.idnumber = idnumber
-		for key in kwargs:
-			setattr(self._obj, key, kwargs[key])
+		self._obj = type(self._klass_name, (Basebase,) , {})(idnumber, **kwargs)
 		return self._obj
 
 
