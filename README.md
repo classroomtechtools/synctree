@@ -113,7 +113,8 @@ class Template(DefaultTemplate):
     def update_students_grade(self, action):
         print("Update!")
         return self.successful_result(method=action.method, info="")
-        
+template = Template()
+
 (synctree.source > synctree.destination) | template
 
 # Output: "Update!"
