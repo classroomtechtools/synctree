@@ -35,7 +35,7 @@ synctree.new('source', 'students', '111', name="NoName" grade=7)
 synctree.new('destination', 'students', '111', name="NoName" grade=6)
 ```
 
-This creates a record in the tree where a sync operation is required, as it appears that the student has gone into grade 7, whereas the destination has not been updated with this information yet.
+This creates an object in the tree in both the source and the destination. This emulates a situation where a student has gone from grade 6 into grade 7, but the destination (a database, whatever) has not been updated with this information yet. The package does have a means to read in information from CSVs, databases, but for the sake of explanation these manual calls give us the gist.
 
 ```python
 synctree.show()
@@ -59,19 +59,35 @@ root
         └── 111
 ```
 
-Synctree knows how to discover attribute differences, and reports it:
+We can also use ```SyncTree.show``` to inspect the actual objects created:
+
+```python
+synctree.show('students', '111')
+```
+
+Output:
+
+```
+source/students/111:
+{"name": "NoName", "grade": 7, "idnumber": "111"}
+
+destination/students/111:
+{"name": "NoName", "grade": 6, "idnumber": "111"}
+```
+
+Synctree knows how to discover the differences in attributes (in our case, the change in grade), and reports it:
 
 ```python
 list(synctree.source - synctree.destination)  # operator overload indicates "find the difference"
 ```
 
-This creates a students on the destination branch, one which is entirely identical to the source. Notice that `999` does not exist in the destination, and needs to be synced over.
+Output:
 
-```python
-[Action(idnumber='111', obj=<synctree.utils.SourceStudents object at 0x103b35048>, source=<synctree.utils.SourceStudents object at 0x103b35048>, dest=<synctree.utils.DestinationStudents object at 0x103b35138>, method='update_students_grade', attribute='grade', value=7, old_value=6)]
+```
+[Action(idnumber='111', obj=<synctree.utils.SourceStudents object at 0x1017661d8>, source=<synctree.utils.SourceStudents object at 0x1017661d8>, dest=<synctree.utils.DestinationStudents object at 0x1017662c8>, method='update_students_grade', attribute='grade', value=7, old_value=6)]
 ```
 
-Notice that Synctree has identified the values that have changed, and created a named method `update_students_grade` which we can use to operate upon. Let's make a class with that method:
+Notice that Synctree has identified the values that have changed, and created a string "update_students_grade" which we can use to operate upon. Let's make a class with a method that corresponds to that string:
 
 ```python
 from synctree.templates import DefaultTemplate
@@ -80,18 +96,7 @@ class Template(DefaultTemplate):
         print("Update!")
 ```
 
-In order to actually do anything, you have to define a template, by creating a class whose method ```new_students``` connects to the database or whatever action occurs when a new student arrives at the school.
-
-```python
-from synctree.templates import DefaultTemplate
-
-class Template(DefaultTemplate):
-        def update_students_grade(self, action):
-                print("Update!")
-template = Template()
-```
-
-Then we can loop through:
+By creating a class with the method ```Template.update_students_grade```, we can use a simple dispatcher to flow our control that way.
 
 ```python
 for action_item in synctree.source - synctree.destination:
@@ -100,8 +105,16 @@ for action_item in synctree.source - synctree.destination:
 # Output: "Update!"
 ```
 
-Or we can use this instead:
+We can automate this by refining our template's method to return a ```Template.successful_result```, which gives us the ability to use more operator overloads to handle the dispatch for us:
 
 ```python
+from synctree.templates import DefaultTemplate
+class Template(DefaultTemplate):
+    def update_students_grade(self, action):
+        print("Update!")
+        return self.successful_result(method=action.method, info="")
+        
 (synctree.source > synctree.destination) | template
+
+# Output: "Update!"
 ```
