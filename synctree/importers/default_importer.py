@@ -2,6 +2,7 @@
 An abstract importer, can be used as is, but does nothing
 """
 
+
 class DefaultImporter:
     _settings = None
 

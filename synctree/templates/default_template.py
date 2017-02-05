@@ -37,7 +37,7 @@ class Reporter:
 
 class DefaultTemplate:
 
-    _exceptions = 'init reporter will_start finished successful_result unsucessful_result dropped_action exception_during_call'
+    _exceptions = 'init reporter will_start finished'
     _reporter = Reporter
 
     def __init__(self):
@@ -64,7 +64,6 @@ class DefaultTemplate:
             # We can expect it to be a list
             for return_item in method_to_be_called(action):
                 if return_item.exception is True:
-                    print(return_item)
                     self.reporter.exception(action, return_item)
                 else:
                     if return_item.success is True:

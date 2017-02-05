@@ -1,7 +1,8 @@
-from synctree.importers.default_importer import DefaultImporter
+from .default_importer import DefaultImporter
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from contextlib import contextmanager
+
 
 class DBImporter(DefaultImporter):
 	"""
@@ -40,6 +41,7 @@ class DBImporter(DefaultImporter):
 		port = self.get_setting('db_port', self.default_port)
 		database = self.get_setting('db_database')
 		return '{}://{}:{}@{}:{}/{}'.format(self.dialect, user, _pass, host, port, database)
+
 
 class PostgresDBImporter(DBImporter):
 	default_port = 5432

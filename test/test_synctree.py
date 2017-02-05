@@ -4,7 +4,6 @@ from synctree.tree import SyncTree
 from synctree.base import Base
 from synctree.branch import Branch
 from synctree.importers.default_importer import DefaultImporter
-from synctree.interface import property_interface
 student_properties = ['lastfirst', 'last', 'first']
 import json
 
@@ -80,7 +79,7 @@ class MEnrollmentImp(DefaultImporter):
 
 
 def test_wrappedinit():
-    from synctree.utils import initobj
+    from synctree.base import initobj
     kwargs = dict(hi='hi')
     tupfactory = initobj('autosend', 'students', **kwargs)
     tup = tupfactory('9999', **kwargs)
@@ -199,8 +198,6 @@ def test_templates():
         unsuccessful_result, \
         dropped_action
 
-    import gns
-
 
     class ExceptionException(Exception): pass
     class ExceptionSuccess(Exception): pass
@@ -225,7 +222,7 @@ def test_templates():
             raise ExceptionNotImplemented("not_implemented")
 
     class NewTemplate(DefaultTemplate):
-        _reporter_class = MyReporter
+        _reporter = MyReporter
         _exceptions = extend_template_exceptions('not_this_one result')
 
         def test_this_one(self):
@@ -254,8 +251,7 @@ def test_templates():
     assert template.test_this_one() == [1]
     assert template.not_this_one() == 1
 
-    # Test we get expected results
-
+    # Test the reporter, which for us will just raise exceptions
     action = define_action(method='success')
     with pytest.raises(ExceptionSuccess):
         template(action)
@@ -279,7 +275,7 @@ def test_templates():
 
 
     class MyLoggerTemplate(LoggerTemplate):
-        _reporter_class = MyBuiltReporter
+        _reporter = MyBuiltReporter
         _test_this_string = 'test_this_string'
 
         def update_subbranch1_change(self, action):
@@ -312,4 +308,4 @@ def test_templates():
 
 if __name__ == "__main__":
 
-    test_init()
+    test_templates()

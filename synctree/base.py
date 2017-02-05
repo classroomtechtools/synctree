@@ -1,14 +1,25 @@
-import treelib
-import json
 from synctree.actions import define_action
 import ast
 import copy
+from synctree.utils import SetEncoder
+import json
 
-class SetEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, set):
-            return list(obj)
-        return json.JSONEncoder.default(self, obj)
+
+class initobj:
+    """
+    Used when creating objects when not using Base class
+    Objects inherit from Basebase
+
+    Usage:
+    klass = initobj('branch', 'subbranch')
+    instance = klass()
+    """
+    def __init__(self, branch, subbranch, **kwargs):
+        self._klass_name = f'{branch.title()}{subbranch.title()}'
+
+    def __call__(self, idnumber, **kwargs):
+        obj_klass = type(self._klass_name, (Basebase,) , {})
+        return obj_klass(idnumber, **kwargs)
 
 
 class Basebase:

@@ -1,5 +1,5 @@
 from . import DefaultTemplate
-from collections import DefaultDict
+from collections import defaultdict
 
 
 class LoggerReporter:

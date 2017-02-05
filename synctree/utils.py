@@ -1,46 +1,55 @@
 import importlib, inspect
-
 from collections import namedtuple
-from synctree.base import Basebase
+import json
 
 
-class initobj:
-	"""
-	"""
-	def __init__(self, branch, subbranch, **kwargs):
-		self._klass_name = f'{branch.title()}{subbranch.title()}'
+class JsonEncoder(json.JSONEncoder):
+    def __init__(self, *args, **kwargs):
+        self._current_subbranch = None
+        super().__init__(*args, **kwargs)
 
-	def __call__(self, idnumber, **kwargs):
-		self._obj = type(self._klass_name, (Basebase,) , {})(idnumber, **kwargs)
-		return self._obj
+    def default(self, obj):
+        if isinstance(obj, Branch):
+            return obj.to_json()
+        elif isinstance(obj, SubBranch):
+            return obj.to_json()
+        elif isinstance(obj, Base):
+            # All base objects become properties
+            return obj._to_json
+        return super().encode(self, obj)
 
 
-def cascading_result(method_calls_tuple_list):
-	"""
-	When passed a list of method calls with the accompanying arguments,
-	Call them until we got an unsuccessful result
-	or until all of them have been exhausted
-	"""
-	ret = []
-	for method, *args in method_calls_tuple_list:
-		results = method(*args)
-		for r in results:
-			ret.append(r)
-			if r.success is False:
-				return ret
-	return ret
+class SetEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, set):
+            return list(obj)
+        return json.JSONEncoder.default(self, obj)
 
 
 def extend_template_exceptions(more_exceptions: '', klass=None):
+	"""
+	Templates need to define exceptions which are not actual template methods
+
+	Usage:
+	class MyTemplate(DefaultTemplate):
+		extend_template_exceptions('more')
+
+		def more(self):
+			pass  # do something that is not template-like
+	"""
 	if klass is None:
 		from synctree.templates import DefaultTemplate
 		klass = DefaultTemplate
-	return f"{DefaultTemplate._exceptions} {more_exceptions}"
+	return f"{klass._exceptions} {more_exceptions}"
 
 
 def class_string_to_class(passed_string: 'module.submodule.ClassName'):
 	"""
 	Get class object from string specification
+
+	Usage:
+	klass = class_string_to_class('importable.path.to.Klass')
+	object = klass()
 	"""
 	if passed_string is None: return None
 	if inspect.isclass(passed_string): return passed_string

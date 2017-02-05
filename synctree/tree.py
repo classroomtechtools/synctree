@@ -7,25 +7,10 @@ from synctree.utils import class_string_to_class
 
 import json
 from collections import defaultdict
-from synctree.utils import initobj
+from synctree.base import initobj
 import pickle
 
-
-class JsonEncoder(json.JSONEncoder):
-    def __init__(self, *args, **kwargs):
-        self._current_subbranch = None
-        super().__init__(*args, **kwargs)
-
-    def default(self, obj):
-        if isinstance(obj, Branch):
-            return obj.to_json()
-        elif isinstance(obj, SubBranch):
-            return obj.to_json()
-        elif isinstance(obj, Base):
-            # All base objects become properties
-            return obj._to_json
-        return super().encode(self, obj)
-
+from synctree.utils import JsonEncoder
 
 class SyncTree(Tree):
     path_delim = '/'
@@ -136,7 +121,7 @@ class SyncTree(Tree):
 
     def new(self, *pth: ['branch', 'subranch', 'idnumber'], **kwargs):
         """ 
-        Create a new object 
+        Manually create a new object 
         """
         branch, subbranch, idnumber = pth
 
@@ -151,7 +136,6 @@ class SyncTree(Tree):
         parent =self.keypath(*pth[:-1])
 
         # Augment this after creation so we can use it for tree operations
-        # We have to get the result back
         result = self.create_node(idnumber, key, parent=parent, data=obj)
         obj._node_identifier = result.identifier
         
@@ -162,6 +146,14 @@ class SyncTree(Tree):
             json.dump(json.loads(self.to_json()), _f, indent=4)
 
     def show(self, *args, **kwargs):
+        """
+        When passed with no arguments, displays the tree graph
+        When passed with two arguments, displays the objects
+
+        Usage:
+        tree.show()
+        tree.show('subbranch', 'idnumber')
+        """
         if len(args) == 0:
             super().show(**kwargs)
         else:
@@ -177,6 +169,7 @@ class SyncTree(Tree):
                         super().show(path_to_node, **kwargs)
                     except treelib.tree.NodeIDAbsentError:
                         print(f"<no {subbranch_to}>")
+
     @classmethod
     def from_file(cls, path):
         """
@@ -224,7 +217,6 @@ class SyncTree(Tree):
         for subbranch_from in list(subbranches_from):
             for subbranch_to in list(subbranches_to):
                 self._relations[subbranch_from].append(subbranch_to)
-
 
     def to_json(self, **kwargs):
         """
