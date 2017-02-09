@@ -64,7 +64,6 @@ class DefaultTemplate:
             # We can expect it to be a list
             for return_item in method_to_be_called(action):
                 if return_item.exception is True:
-                    print(return_item)
                     self.reporter.exception(action, return_item)
                 else:
                     if return_item.success is True:
