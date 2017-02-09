@@ -1,6 +1,8 @@
 from .default_template import DefaultTemplate
+from .default_template import PrintTemplate
+from .default_template import BlockedTemplateWrapper
 from .logger_template import LoggerTemplate
 from .logger_template import LoggerReporter
-from .logger_template import PrintTemplate
+
 
 __all__ = [DefaultTemplate, PrintTemplate, LoggerTemplate, LoggerReporter]

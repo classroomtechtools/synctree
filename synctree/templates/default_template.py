@@ -32,7 +32,7 @@ class Reporter:
         """
         Override if this
         """
-        raise TemplateDoesNotImplement(f"{self.__class__.__name__} does not implement method {action.method}")
+        pass
 
 
 class DefaultTemplate:
