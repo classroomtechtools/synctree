@@ -1,7 +1,7 @@
 # synctree
 Framework for importing / exporting information between CSVs and databases
 
-###QUICKSTART
+### QUICKSTART
 
 The framework is initialized with the creation of a tree structure, which has `branches` and `subbranches`. The idea is that the branches represent data points, such as sources or destinations, and the subbranches represent the kinds of objects that are to be synced (in the model).
 
@@ -99,6 +99,7 @@ class Template(DefaultTemplate):
 By creating a class with the method ```Template.update_students_grade```, we can use a simple dispatcher to flow our control that way.
 
 ```python
+template = Template()
 for action_item in synctree.source - synctree.destination:
         method = getattr(template, action_item.method)
         method(action_item)
