@@ -37,12 +37,14 @@ class SyncTree(Tree):
                  model_klass_list: '( (classstr, classstr, ..), (classstr, classstr, ..) )' = None,
                  importer_klass_list: '( (classstr, classstr, ..), (classstr, classstr, ..) )' = None,
                  branch_class=None,
-                 jsonify_root_data=True):
+                 jsonify_root_data=True,
+                 raise_error_on_duplicates=True):
         """
         Makes a tree-like structure that mirrors, used to hold data used to send on operations
         to a synctree template
         """
         super().__init__()
+        self.raise_error_on_duplicates = raise_error_on_duplicates
         self._relations = defaultdict(list)
         self.model_klass_list = model_klass_list or [[None] * len(subbranches)] * len(branches)
         self.importer_klass_list = importer_klass_list or [[None] * len(subbranches)] * len(branches)
@@ -150,9 +152,16 @@ class SyncTree(Tree):
         key = self.keypath(*pth)
         parent =self.keypath(*pth[:-1])
 
+        # Capture the error as appropriate
+        try:
+            result = self.create_node(idnumber, key, parent=parent, data=obj)
+        except treelib.tree.DuplicatedNodeIdError:
+            if self.raise_error_on_duplicates:
+                raise  # TODO: use redefined exception
+            else:
+                return None
         # Augment this after creation so we can use it for tree operations
         # We have to get the result back
-        result = self.create_node(idnumber, key, parent=parent, data=obj)
         obj._node_identifier = result.identifier
         
         return obj
