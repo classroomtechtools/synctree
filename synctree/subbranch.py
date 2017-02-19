@@ -4,6 +4,7 @@ from treelib.tree import DuplicatedNodeIdError as Duplicated
 from synctree.importers.default_importer import DefaultImporter
 import weakref
 
+
 class SubBranch:
     def __init__(self, branch, subbranchname, importer):
         self.branch = weakref.proxy(branch)

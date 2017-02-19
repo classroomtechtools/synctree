@@ -152,4 +152,4 @@ class LoggerReporter:
 class LoggerTemplate(DefaultTemplate):
     """
     """
-    _reporter_class = LoggerReporter
+    _reporter = LoggerReporter

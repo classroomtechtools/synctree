@@ -6,6 +6,8 @@ from synctree.base import Basebase
 
 class initobj:
 	"""
+	Light wrapper object that follows model object creation steps
+	Used so that we can use consistent API for naked objects	
 	"""
 	def __init__(self, branch, subbranch, **kwargs):
 		self._klass_name = f'{branch.title()}{subbranch.title()}'
