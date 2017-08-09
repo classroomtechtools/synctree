@@ -5,6 +5,7 @@ Using the passed gen_obj on __init__, create instance of template,
 
 from synctree.utils import class_string_to_class
 
+
 class Wheel:
 	def __init__(self, gen_obj):
 		self.gen_obj = gen_obj

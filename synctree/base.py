@@ -19,6 +19,11 @@ class Basebase:
         self._kwargs = kwargs
         for key in kwargs:
             setattr(self, key, kwargs[key])
+        self.post_init()
+
+    def post_init(self):
+        """ override me as necessary """
+        pass
 
     def _kvargs(self):
         try:

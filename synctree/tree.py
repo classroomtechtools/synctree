@@ -37,7 +37,7 @@ class SyncTree(Tree):
                  model_klass_list: '( (classstr, classstr, ..), (classstr, classstr, ..) )' = None,
                  importer_klass_list: '( (classstr, classstr, ..), (classstr, classstr, ..) )' = None,
                  branch_class=None,
-                 jsonify_root_data=True,
+                 jsonify_root_data=False,
                  raise_error_on_duplicates=True):
         """
         Makes a tree-like structure that mirrors, used to hold data used to send on operations

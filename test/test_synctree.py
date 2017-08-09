@@ -4,7 +4,6 @@ from synctree.tree import SyncTree
 from synctree.base import Base
 from synctree.branch import Branch
 from synctree.importers.default_importer import DefaultImporter
-from synctree.interface import property_interface
 student_properties = ['lastfirst', 'last', 'first']
 import json
 
@@ -187,6 +186,43 @@ def test_narrowing():
     # Test iteration on subbranches
     assert len(list(tree.branch1.subbranch1)) == 2
 
+def test_importers():
+    from synctree.importers.csv_importer import CSVImporter
+
+    with open('/tmp/source.csv', 'w') as file_:
+        file_.write('111,NoName,7\n')
+    with open('/tmp/destination.csv', 'w') as file_:
+        file_.write('111,NoName,6\n')
+
+    class SourceStudentImporter(CSVImporter):
+        _settings = {
+            'path': '/tmp/source.csv',
+            'student_columns': 'idnumber name grade',
+            'delimiter': ','
+        }
+
+    class DestinationStudentImporter(CSVImporter):
+        _settings = {
+            'path': '/tmp/destination.csv',
+            'student_columns': 'idnumber name grade',
+            'delimiter': ','
+        }
+            
+    synctree = SyncTree(
+        ['source', 'destination'], 
+        ['students'],
+        raise_error_on_duplicates=False,
+        importer_klass_list=[
+            [SourceStudentImporter],
+            [DestinationStudentImporter]
+        ]
+    )
+
+    +synctree  # operator overload means "import"
+
+    print(synctree.show())
+    print(synctree.show('students', '111'))
+
 def test_templates():
 
     from synctree.templates import DefaultTemplate, LoggerReporter
@@ -225,7 +261,7 @@ def test_templates():
             raise ExceptionNotImplemented("not_implemented")
 
     class NewTemplate(DefaultTemplate):
-        _reporter_class = MyReporter
+        _reporter = MyReporter
         _exceptions = extend_template_exceptions('not_this_one result')
 
         def test_this_one(self):
@@ -279,7 +315,7 @@ def test_templates():
 
 
     class MyLoggerTemplate(LoggerTemplate):
-        _reporter_class = MyBuiltReporter
+        _reporter = MyBuiltReporter
         _test_this_string = 'test_this_string'
 
         def update_subbranch1_change(self, action):
@@ -312,4 +348,4 @@ def test_templates():
 
 if __name__ == "__main__":
 
-    test_init()
+    test_importers()
