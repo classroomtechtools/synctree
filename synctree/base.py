@@ -32,6 +32,10 @@ class Basebase:
             raise TypeError("No need to add property decorator to instance methods")
 
     @property
+    def _description(self):
+        return ""
+
+    @property
     def _to_json(self):
         """ 
         Returns a string

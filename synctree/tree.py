@@ -255,6 +255,8 @@ class SyncTree(Tree):
             for obj in br(idnumber):
                 objs.append( (br, obj) )
 
+        getattr(self, self.branches[0]).is_source = True  # shortcut   
+
         sources = {}
         for br, obj in objs:
             if br.is_source:
@@ -267,15 +269,20 @@ class SyncTree(Tree):
                 if br.is_source:
                     continue
                 subbranch = obj.__subbranch__
-                source = sources[subbranch]
+                source = sources.get(subbranch)
+                if source is None:
+                    continue
                 for diff in source - obj:
-                    output.append(str(diff))
+                    if diff.old_value is not None:
+                        output.append(f"{diff.method.upper()}: {diff.old_value} ==> {diff.value}")
+                    else:
+                        output.append(f"{diff.method.upper()}: ==> {diff.value} <==")
             if output:
                 print('\n'.join(output))
             else:
                 print("No Diffs")
         else:
-            print("No source?")
+            print("Cannot output difference since source is undetermined?")
 
     def __pos__(self):
         for branch in self.branches:

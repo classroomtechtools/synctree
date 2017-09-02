@@ -66,6 +66,18 @@ class SubBranch:
             if node.data is not None:
                 yield node.data
 
+    def find_all(self, search_string: 'attribute: value'):
+        """
+        Do case insensitive search in subbranch for items that have attribute: value
+        """
+        ret = []
+        a, v = [s.strip() for s in search_string.split(":")]
+        for obj in self.get_objects():
+            val = getattr(obj, a)
+            if val and val.lower().startswith(v.lower()):
+                ret.append(obj)
+        return ret if ret else None
+
     def make(self, idnumber, **kwargs):
         """
         Makes the object, returns it
