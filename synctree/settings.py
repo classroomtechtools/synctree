@@ -24,6 +24,7 @@ def setup_settings(package_with_settings_ini):
 
 	path_to_package_parent = str(Path(inspect.getfile(package_with_settings_ini)))
 	path_to_home = os.path.split(os.path.split(path_to_package_parent)[0])[0]
+	input(path_to_home)
 	path_to_settings = os.path.join(path_to_home, settings_ini_filename)
 
 	import configparser
@@ -32,6 +33,7 @@ def setup_settings(package_with_settings_ini):
 	# We'll add settings that we want to be automatic, such as path settings
 	settings['DEFAULT']['user_home'] = os.getenv("HOME")
 	settings['DEFAULT']['my_home'] = path_to_package_parent
+	settings['DEFAULT']['package_home'] = path_to_home
 	settings.read(path_to_settings)
 
 	importable_settings_module_name = '{}_settings'.format(package_with_settings_ini.__name__)
