@@ -24,7 +24,6 @@ def setup_settings(package_with_settings_ini):
 
 	path_to_package_parent = str(Path(inspect.getfile(package_with_settings_ini)))
 	path_to_home = os.path.split(os.path.split(path_to_package_parent)[0])[0]
-	input(path_to_home)
 	path_to_settings = os.path.join(path_to_home, settings_ini_filename)
 
 	import configparser
