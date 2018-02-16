@@ -1,6 +1,10 @@
 
 # synctree
-Framework for re-modeling information from a source into a new format.
+Framework for automating one-way sync between CSVs and databases (where the models are vastly different)
+
+### TL;DR
+
+You have two databases where the information in one of them (the source) is the source of truth for an organization, and you'd like to write some glue code to get the information into other systems/databases. This gives you the import the data from two different sources, detect the differences, and setup actions based on it.
 
 ### QUICKSTART
 
