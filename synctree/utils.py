@@ -3,10 +3,13 @@ from collections import namedtuple
 import json
 
 
-class JsonEncoder(json.JSONEncoder):
-    def __init__(self, *args, **kwargs):
-        self._current_subbranch = None
-        super().__init__(*args, **kwargs)
+class initobj:
+	"""
+	Light wrapper object that follows model object creation steps
+	Used so that we can use consistent API for naked objects	
+	"""
+	def __init__(self, branch, subbranch, **kwargs):
+		self._klass_name = f'{branch.title()}{subbranch.title()}'
 
     def default(self, obj):
         if isinstance(obj, Branch):

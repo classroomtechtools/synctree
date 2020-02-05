@@ -8,10 +8,16 @@ verbose = False
 
 
 class CSVImporter(DefaultImporter):
+    _settings = {
+        'delimiter': ','
+    }
 
     def init(self):
-        if self.get_setting('delimiter') == '\\t':
+        delim = self.get_setting('delimiter') 
+        if delim == '\\t':
             self.update_setting('delimiter', '\t')
+        elif not delim:
+            self.update_setting('delimiter', ',')
 
     def get_path(self):
         return self.get_setting('path')
@@ -26,10 +32,11 @@ class CSVImporter(DefaultImporter):
         fieldnames = self.get_setting('{}_columns'.format(self._subbranch.subbranchname), None)
 
         if not fieldnames:
+            print(fieldnames)
             pass
             # Then it must be in the file itself, yes? TODO: Check for this, raise exception if not
             # It's doubtful that tools would export with the equivelent names that the syncing needs
-            # so this probably needs to be fixed
+            # so this probably needs a mapping feature
         else:
             fieldnames = fieldnames.split(' ')
 

@@ -22,12 +22,14 @@ class SyncTree(Tree):
                  model_klass_list: '( (classstr, classstr, ..), (classstr, classstr, ..) )' = None,
                  importer_klass_list: '( (classstr, classstr, ..), (classstr, classstr, ..) )' = None,
                  branch_class=None,
-                 jsonify_root_data=True):
+                 jsonify_root_data=False,
+                 raise_error_on_duplicates=True):
         """
         Makes a tree-like structure that mirrors, used to hold data used to send on operations
         to a synctree template
         """
         super().__init__()
+        self.raise_error_on_duplicates = raise_error_on_duplicates
         self._relations = defaultdict(list)
         self.model_klass_list = model_klass_list or [[None] * len(subbranches)] * len(branches)
         self.importer_klass_list = importer_klass_list or [[None] * len(subbranches)] * len(branches)
@@ -135,8 +137,17 @@ class SyncTree(Tree):
         key = self.keypath(*pth)
         parent =self.keypath(*pth[:-1])
 
+        # Capture the error as appropriate
+        try:
+            result = self.create_node(idnumber, key, parent=parent, data=obj)
+        except treelib.tree.DuplicatedNodeIdError:
+            if self.raise_error_on_duplicates:
+                raise  # TODO: use redefined exception
+            else:
+                return None
         # Augment this after creation so we can use it for tree operations
         result = self.create_node(idnumber, key, parent=parent, data=obj)
+        # We have to get the result back
         obj._node_identifier = result.identifier
         
         return obj
@@ -238,6 +249,8 @@ class SyncTree(Tree):
             for obj in br(idnumber):
                 objs.append( (br, obj) )
 
+        getattr(self, self.branches[0]).is_source = True  # shortcut   
+
         sources = {}
         for br, obj in objs:
             if br.is_source:
@@ -250,15 +263,20 @@ class SyncTree(Tree):
                 if br.is_source:
                     continue
                 subbranch = obj.__subbranch__
-                source = sources[subbranch]
+                source = sources.get(subbranch)
+                if source is None:
+                    continue
                 for diff in source - obj:
-                    output.append(str(diff))
+                    if diff.old_value is not None:
+                        output.append(f"{diff.method.upper()}: {diff.old_value} ==> {diff.value}")
+                    else:
+                        output.append(f"{diff.method.upper()}: ==> {diff.value} <==")
             if output:
                 print('\n'.join(output))
             else:
                 print("No Diffs")
         else:
-            print("No source?")
+            print("Cannot output difference since source is undetermined?")
 
     def __pos__(self):
         for branch in self.branches:

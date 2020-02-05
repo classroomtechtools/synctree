@@ -32,6 +32,7 @@ def setup_settings(package_with_settings_ini):
 	# We'll add settings that we want to be automatic, such as path settings
 	settings['DEFAULT']['user_home'] = os.getenv("HOME")
 	settings['DEFAULT']['my_home'] = path_to_package_parent
+	settings['DEFAULT']['package_home'] = path_to_home
 	settings.read(path_to_settings)
 
 	importable_settings_module_name = '{}_settings'.format(package_with_settings_ini.__name__)

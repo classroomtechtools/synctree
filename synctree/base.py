@@ -30,12 +30,21 @@ class Basebase:
         self._kwargs = kwargs
         for key in kwargs:
             setattr(self, key, kwargs[key])
+        self.post_init()
+
+    def post_init(self):
+        """ override me as necessary """
+        pass
 
     def _kvargs(self):
         try:
             return sorted({k:getattr(self, k) for k in dir(self) if not k.startswith('_')}.items(), key=lambda o: o[0])
         except TypeError:
             raise TypeError("No need to add property decorator to instance methods")
+
+    @property
+    def _description(self):
+        return ""
 
     @property
     def _to_json(self):

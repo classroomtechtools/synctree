@@ -186,6 +186,43 @@ def test_narrowing():
     # Test iteration on subbranches
     assert len(list(tree.branch1.subbranch1)) == 2
 
+def test_importers():
+    from synctree.importers.csv_importer import CSVImporter
+
+    with open('/tmp/source.csv', 'w') as file_:
+        file_.write('111,NoName,7\n')
+    with open('/tmp/destination.csv', 'w') as file_:
+        file_.write('111,NoName,6\n')
+
+    class SourceStudentImporter(CSVImporter):
+        _settings = {
+            'path': '/tmp/source.csv',
+            'student_columns': 'idnumber name grade',
+            'delimiter': ','
+        }
+
+    class DestinationStudentImporter(CSVImporter):
+        _settings = {
+            'path': '/tmp/destination.csv',
+            'student_columns': 'idnumber name grade',
+            'delimiter': ','
+        }
+            
+    synctree = SyncTree(
+        ['source', 'destination'], 
+        ['students'],
+        raise_error_on_duplicates=False,
+        importer_klass_list=[
+            [SourceStudentImporter],
+            [DestinationStudentImporter]
+        ]
+    )
+
+    +synctree  # operator overload means "import"
+
+    print(synctree.show())
+    print(synctree.show('students', '111'))
+
 def test_templates():
 
     from synctree.templates import DefaultTemplate, LoggerReporter
@@ -309,3 +346,4 @@ def test_templates():
 if __name__ == "__main__":
 
     test_templates()
+    test_importers()

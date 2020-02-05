@@ -32,7 +32,7 @@ class Reporter:
         """
         Override if this
         """
-        raise TemplateDoesNotImplement(f"{self.__class__.__name__} does not implement method {action.method}")
+        pass
 
 
 class DefaultTemplate:
@@ -152,4 +152,4 @@ class LoggerReporter:
 class LoggerTemplate(DefaultTemplate):
     """
     """
-    _reporter_class = LoggerReporter
+    _reporter = LoggerReporter

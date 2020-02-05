@@ -7,6 +7,7 @@ from functools import partial
 import ast
 import weakref
 
+
 class NoImporter:
     pass
 
@@ -65,9 +66,16 @@ class Branch:
         output_strs = []
         for node_key in self.tree._nodes.keys():
             node = self.tree.get_node(node_key)
-            if node.data and node_key.startswith(self.branchname):
-                output_strs.append(str(node.data))
+            # filter out stuff from other branches which is present here
+            # we shouldn't need to check that node is non None
+            if node.data and node_key.startswith(self.branchname) and node_key.split('/')[-1] == idnumber:
+                # If returns None, it means it doesn't need to be output
+                if node.data._description is not None:
+                    output_strs.append(
+                        node.data._description or repr(node.data)
+                    )
                 ret.append(node.data)
+
         if output_strs:
             print(self.branchname.upper())
             print('\n'.join(output_strs))
